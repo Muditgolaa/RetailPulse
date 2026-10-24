@@ -2,6 +2,7 @@ import { useState } from "react";
 import KpiCard from "../components/ops/KpiCard.jsx";
 import AuditList from "../components/ops/AuditList.jsx";
 import ProposalCard from "../components/ops/ProposalCard.jsx";
+import TicketPanel from "../components/ops/TicketPanel.jsx";
 import StockTable from "../components/ops/StockTable.jsx";
 import Button from "../components/ui/Button.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
@@ -116,6 +117,8 @@ export default function OpsDashboard() {
           )}
         </section>
       </div>
+
+      <TicketPanel onChanged={audit.reload} />
 
       <section className="rounded-lg border border-ops-line bg-ops-panel">
         <h2 className="border-b border-ops-line px-4 py-3 font-medium">Audit history</h2>

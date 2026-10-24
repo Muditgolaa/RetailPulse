@@ -14,6 +14,7 @@ import PolicyAssistant from "./pages/PolicyAssistant.jsx";
 import Cart from "./pages/Cart.jsx";
 import Orders from "./pages/Orders.jsx";
 import Account from "./pages/Account.jsx";
+import Support from "./pages/Support.jsx";
 import OpsDashboard from "./pages/OpsDashboard.jsx";
 import HealthPage from "./pages/HealthPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
@@ -36,6 +37,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="cart" element={<Cart />} />
             <Route path="orders" element={<Orders />} />
             <Route path="account" element={<Account />} />
+            <Route path="support" element={<Support />} />
           </Route>
         </Route>
 

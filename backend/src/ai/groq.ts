@@ -62,12 +62,34 @@ export async function listModels(timeoutMs = 8000): Promise<string[]> {
   return (body?.data ?? []).map((m) => m.id).sort();
 }
 
-export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
-export type ChatResult = { content: string; model: string; latencyMs: number; promptTokens?: number; completionTokens?: number };
+export type ToolCall = { id: string; name: string; arguments: string };
+export type ToolDefinition = { name: string; description: string; parameters: Record<string, unknown> };
+export type ChatMessage =
+  | { role: "system" | "user"; content: string }
+  | { role: "assistant"; content: string; toolCalls?: ToolCall[] }
+  | { role: "tool"; toolCallId: string; content: string };
+export type ChatResult = {
+  content: string; toolCalls: ToolCall[]; model: string; latencyMs: number; promptTokens?: number; completionTokens?: number;
+};
+
+type ChatOptions = {
+  maxTokens?: number; temperature?: number; feature?: string; userId?: number; timeoutMs?: number; json?: boolean;
+  tools?: ToolDefinition[]; // the model may ask for these; our code runs them, never the model
+};
+
+// Our message shape → the OpenAI-compatible wire format Groq expects.
+function toWire(m: ChatMessage) {
+  if (m.role === "tool") return { role: "tool", tool_call_id: m.toolCallId, content: m.content };
+  if (m.role === "assistant" && m.toolCalls?.length) {
+    return {
+      role: "assistant", content: m.content || null,
+      tool_calls: m.toolCalls.map((c) => ({ id: c.id, type: "function", function: { name: c.name, arguments: c.arguments } })),
+    };
+  }
+  return { role: m.role, content: m.content };
+}
 
 // One chat completion. When `feature` is given, the call is recorded in ai_call_logs (never the prompt or key).
-type ChatOptions = { maxTokens?: number; temperature?: number; feature?: string; userId?: number; timeoutMs?: number; json?: boolean };
-
 export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<ChatResult> {
   const started = Date.now();
   try {
@@ -77,30 +99,40 @@ export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Pro
         method: "POST",
         body: JSON.stringify({
           model: env.GROQ_MODEL,
-          messages,
+          messages: messages.map(toWire),
           max_tokens: opts.maxTokens ?? 512,
           temperature: opts.temperature ?? 0.2,
           // gpt-oss models reason before answering; keep that short so the token budget goes to the answer.
           ...(isReasoningModel(env.GROQ_MODEL) && { reasoning_effort: "low" }),
           ...(opts.json && { response_format: { type: "json_object" } }),
+          ...(opts.tools?.length && {
+            tools: opts.tools.map((t) => ({ type: "function", function: t })),
+            tool_choice: "auto",
+          }),
         }),
       },
       opts.timeoutMs,
     )) as {
       model?: string;
-      choices?: { message?: { content?: string }; finish_reason?: string }[];
+      choices?: {
+        message?: { content?: string | null; tool_calls?: { id: string; function: { name: string; arguments: string } }[] };
+        finish_reason?: string;
+      }[];
       usage?: { prompt_tokens?: number; completion_tokens?: number };
     };
 
     const choice = body?.choices?.[0];
-    const content = choice?.message?.content;
+    const toolCalls = (choice?.message?.tool_calls ?? []).map((c) => ({ id: c.id, name: c.function.name, arguments: c.function.arguments }));
+    const content = choice?.message?.content ?? "";
     if (typeof content !== "string") throw new AiProviderError("BAD_RESPONSE", "Groq returned no message content");
-    if (!content.trim() && choice?.finish_reason === "length") {
-      throw new AiProviderError("BAD_RESPONSE", "Groq used the whole token budget before answering; raise maxTokens");
+    if (toolCalls.length === 0 && !content.trim()) {
+      throw new AiProviderError("BAD_RESPONSE", choice?.finish_reason === "length"
+        ? "Groq used the whole token budget before answering; raise maxTokens"
+        : "Groq returned no message content");
     }
 
     const result = {
-      content, model: body.model ?? env.GROQ_MODEL, latencyMs: Date.now() - started,
+      content, toolCalls, model: body.model ?? env.GROQ_MODEL, latencyMs: Date.now() - started,
       promptTokens: body.usage?.prompt_tokens, completionTokens: body.usage?.completion_tokens,
     };
     await logCall(opts, result.latencyMs, true, undefined, result);

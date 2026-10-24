@@ -7,7 +7,7 @@ process.env.GROQ_API_KEY ||= "gsk_test_key_for_rag_tests_00000000000";
 const { app } = await import("../src/app.js");
 const { prisma } = await import("../src/db.js");
 const { signToken } = await import("../src/auth/jwt.js");
-const { resetAiRateLimit } = await import("../src/routes/ai.js");
+const { resetAiRateLimit } = await import("../src/lib/rateLimit.js");
 const { ingestFolder, chunkDocument, storeChunks, parseDocument } = await import("../src/rag/ingest.js");
 
 const realFetch = globalThis.fetch;

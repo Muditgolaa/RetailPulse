@@ -118,6 +118,7 @@ Open http://localhost:5173. The status card shows whether the backend and the da
 | `/policy` | customer | Policy assistant (calls `POST /api/ai/ask`) |
 | `/cart` | customer | Cart and simulated checkout (calls `POST /api/orders`) |
 | `/orders` | customer | Order history with status, expected delivery, and cancellation |
+| `/support` | customer | Support assistant chat (checks orders and policy, opens tickets) and the customer's tickets |
 | `/account` | customer | Shopping preferences: home store, usual budget and up to 5 favourite brands |
 | `/ops` | manager | Inventory, critical stock, replenishment proposals, audit history |
 | `/status` | public | Backend and database health |
@@ -157,6 +158,10 @@ The frontend has no mock data left: every screen uses the real API.
 | GET | `/api/orders` | CUSTOMER | The signed-in customer's orders, newest first |
 | GET | `/api/orders/:code` | CUSTOMER | One of the customer's own orders. Another customer's order → `404` |
 | POST | `/api/orders/:code/cancel` | CUSTOMER | Cancels a placed, ready-for-pickup or delayed order, refunds it and releases reserved stock. `409` if already cancelled, shipped or delivered |
+| POST | `/api/support/chat` | CUSTOMER | `{message, history[≤10 {role: user\|assistant, content}]}` → `{reply, toolsUsed[], ticket}`. Tool-calling agent; see below |
+| POST | `/api/support/tickets` | CUSTOMER | `{category, priority?, summary, orderCode?}` → `201` ticket. The order must be the customer's own (`404` otherwise). At most 3 tickets an hour (`429`) |
+| GET | `/api/support/tickets?status=` | signed in | Customers get their own tickets; managers get everyone's |
+| PATCH | `/api/support/tickets/:id` | MANAGER | `{status: OPEN\|IN_PROGRESS\|RESOLVED}`, audited. `409` if it already has that status |
 | GET | `/api/ops/dashboard?storeId=` | MANAGER | Stock KPIs (including pending approvals), stock health, and per-item demand, days of cover, severity and suggested quantity |
 | POST | `/api/ops/scan` | MANAGER | `{storeId}` → `{created[], skipped[]}`. Creates **PROPOSED** actions only and never changes inventory. One proposal per item per day; items with an open proposal are skipped |
 | GET | `/api/ops/actions?status=&storeId=` | MANAGER | Actions with payload (calculation inputs and outputs), explanation, store, product and the manager who decided |
@@ -190,6 +195,23 @@ The backend calls Groq's OpenAI-compatible REST API with plain `fetch` (`backend
 2. Add `GROQ_API_KEY=...` to `backend/.env`.
 3. Restart the backend.
 4. Run `npm run ai:check`.
+
+## Support agent
+
+`POST /api/support/chat` (`backend/src/support/`) runs a short tool-calling loop with Groq.
+
+| Tool | What it does | Guard |
+|---|---|---|
+| `get_order_status(orderCode)` | Looks up one order | Only the signed-in customer's orders; anyone else's reads as "no order on this account" |
+| `list_my_orders()` | Lists the 5 latest orders | Signed-in customer only |
+| `search_policy(question)` | Searches the policy documents | Same region and tier filters as the policy assistant |
+| `create_ticket(category, priority, summary, orderCode?)` | Opens a ticket for staff | Zod-validated, own orders only, 3 an hour |
+
+- **The model never runs anything itself.** It chooses a tool, our code runs it as the signed-in customer, and only the result goes back to the model. Unknown tools and invalid arguments are returned to the model as errors.
+- **No dangerous tools:** there is no tool for refunds, cancellations or price changes. Customers cancel eligible orders themselves on My orders.
+- **Bounded loop:** at most 4 tool rounds, then the model must answer in words.
+- **Safe history:** the client may send only `user` and `assistant` messages as history, so it can't inject system or tool messages.
+- **Logging:** every call is recorded in `ai_call_logs` as `SUPPORT_AGENT`, and tickets and status changes are audited.
 
 ## Orders and checkout
 

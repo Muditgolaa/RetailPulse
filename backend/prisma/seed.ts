@@ -25,7 +25,7 @@ function demoPassword(): string {
 
 async function clearTables() {
   await prisma.$executeRaw`
-    TRUNCATE TABLE order_items, orders, cart_items, carts, sales_daily, inventory,
+    TRUNCATE TABLE support_tickets, order_items, orders, cart_items, carts, sales_daily, inventory,
       agent_actions, audit_logs, ai_call_logs, users, products, stores
     RESTART IDENTITY CASCADE`;
 }

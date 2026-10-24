@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import AskBox from "../components/AskBox.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import { ErrorState } from "../components/ui/States.jsx";
@@ -71,6 +71,9 @@ function PolicyAnswer({ result: r, question }) {
         <p className="text-sm text-ink-soft">{question}</p>
         <p className="mt-2 font-medium">Not covered by NovaMart's approved policies</p>
         <p className="mt-1 text-sm text-ink-soft">{r.answer}</p>
+        <Link to={`/support?q=${encodeURIComponent(question)}`} className="mt-3 inline-block text-sm text-forest hover:underline">
+          Ask support about this
+        </Link>
       </article>
     );
   }

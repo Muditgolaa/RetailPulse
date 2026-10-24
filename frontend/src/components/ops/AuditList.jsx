@@ -4,6 +4,8 @@ const LABELS = {
   INVENTORY_SCAN: { text: "Ran stock scan", style: "text-ops-lime" },
   ORDER_PLACED: { text: "Order placed", style: "text-ops-text" },
   ORDER_CANCELLED: { text: "Order cancelled", style: "text-ops-amber" },
+  TICKET_CREATED: { text: "Ticket opened", style: "text-ops-text" },
+  TICKET_STATUS_CHANGED: { text: "Ticket updated", style: "text-ops-emerald" },
 };
 
 function describe(a) {
@@ -12,6 +14,8 @@ function describe(a) {
     return `${a.entityId}: ${d.createdActionIds?.length ?? 0} new proposal(s), ${d.skipped?.length ?? 0} already open`;
   }
   if (a.action === "ORDER_PLACED") return `${a.entityId} at ${d.storeCode} · ₹${Number(d.total).toLocaleString("en-IN")}`;
+  if (a.action === "TICKET_CREATED") return `#${a.entityId} · ${String(d.category).toLowerCase()} · ${String(d.priority).toLowerCase()} priority${d.createdBy === "AGENT" ? " · by assistant" : ""}`;
+  if (a.action === "TICKET_STATUS_CHANGED") return `#${a.entityId} · ${String(d.from).toLowerCase()} → ${String(d.to).toLowerCase()}`;
   if (a.action === "ORDER_CANCELLED") return `${a.entityId} · was ${String(d.previousStatus).toLowerCase().replace(/_/g, " ")}`;
   const change = d.inventoryChange
     ? ` · ordered ${d.inventoryChange.orderedQty} units, incoming ${d.inventoryChange.incomingBefore} → ${d.inventoryChange.incomingAfter}`

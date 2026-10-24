@@ -6,7 +6,7 @@ process.env.GROQ_API_KEY ||= "gsk_test_key_for_preference_tests_0000";
 const { app } = await import("../src/app.js");
 const { prisma } = await import("../src/db.js");
 const { signToken } = await import("../src/auth/jwt.js");
-const { resetAiRateLimit } = await import("../src/routes/ai.js");
+const { resetAiRateLimit } = await import("../src/lib/rateLimit.js");
 
 let token = "";
 let arjunId = 0;
