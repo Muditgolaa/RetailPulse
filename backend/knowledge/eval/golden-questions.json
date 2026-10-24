@@ -1,0 +1,153 @@
+{
+  "description": "Golden questions for evaluating the policy assistant. Expected facts are taken word-for-word in meaning from the documents in backend/knowledge. 'askAs' is the membership tier of the signed-in user, because retrieval is filtered by tier.",
+  "questions": [
+    {
+      "id": "Q1",
+      "question": "Can I return an opened phone?",
+      "askAs": "GOLD",
+      "expectFound": true,
+      "expectedSources": [{ "docId": "opened-electronics-policy", "section": "Opened mobile phones and tablets" }],
+      "mustInclude": [
+        "Only if the phone is defective or not as described",
+        "Within 7 days of delivery",
+        "Change of mind is not accepted once the seal is broken",
+        "Defect confirmed by a NovaMart technician or the brand's authorised service centre"
+      ],
+      "mustNotSay": ["A 15-day window applies because the user is Gold"]
+    },
+    {
+      "id": "Q2",
+      "question": "How long do refunds take?",
+      "askAs": "STANDARD",
+      "expectFound": true,
+      "expectedSources": [{ "docId": "returns-refunds-policy", "section": "Refund timelines" }],
+      "mustInclude": [
+        "Inspection within 2 business days of receiving the product",
+        "UPI and wallets: 1 to 3 business days",
+        "Net banking: 3 to 5 business days",
+        "Cards: 5 to 7 business days",
+        "Store credit within 2 hours as an alternative"
+      ],
+      "mustNotSay": []
+    },
+    {
+      "id": "Q3",
+      "question": "Is express delivery free for Gold members?",
+      "askAs": "GOLD",
+      "expectFound": true,
+      "expectedSources": [
+        { "docId": "membership-benefits", "section": "Gold member benefits" },
+        { "docId": "shipping-delivery-policy", "section": "Delivery fees" }
+      ],
+      "mustInclude": [
+        "Free for orders of ₹2,000 or more",
+        "Only in Delhi NCR, where express delivery is available",
+        "Below ₹2,000 express delivery costs ₹149"
+      ],
+      "mustNotSay": ["Express delivery is free on all orders for Gold members", "Express delivery is available everywhere in India"]
+    },
+    {
+      "id": "Q4",
+      "question": "What is the warranty period?",
+      "askAs": "STANDARD",
+      "expectFound": true,
+      "expectedSources": [{ "docId": "warranty-policy", "section": "Warranty periods by product category" }],
+      "mustInclude": [
+        "It depends on the product category",
+        "For example: mobile phones, laptops and TVs 1 year; small accessories 6 months; NovaTech products 2 years",
+        "Either lists periods by category or asks which product the customer means"
+      ],
+      "mustNotSay": ["A single warranty period for every product"]
+    },
+    {
+      "id": "Q5",
+      "question": "Which payment methods are accepted?",
+      "askAs": "STANDARD",
+      "expectFound": true,
+      "expectedSources": [
+        { "docId": "payment-methods-policy", "section": "Accepted payment methods online" },
+        { "docId": "payment-methods-policy", "section": "Accepted payment methods in stores" }
+      ],
+      "mustInclude": [
+        "UPI",
+        "Credit and debit cards: Visa, Mastercard, RuPay, American Express",
+        "Net banking",
+        "NovaMart gift cards and NovaPoints",
+        "Cash on delivery up to ₹50,000 where available"
+      ],
+      "mustNotSay": ["Cryptocurrency", "Bitcoin"]
+    },
+    {
+      "id": "Q6",
+      "question": "Can I return a damaged product?",
+      "askAs": "STANDARD",
+      "expectFound": true,
+      "expectedSources": [{ "docId": "returns-refunds-policy", "section": "Damaged, defective or wrong items" }],
+      "mustInclude": [
+        "Yes",
+        "Report within 48 hours of delivery",
+        "Include photos of the product and packaging",
+        "Replacement, or a full refund if a replacement is not in stock",
+        "Free pickup"
+      ],
+      "mustNotSay": []
+    },
+    {
+      "id": "Q7",
+      "question": "Does delivery eligibility vary by location?",
+      "askAs": "STANDARD",
+      "expectFound": true,
+      "expectedSources": [
+        { "docId": "shipping-delivery-policy", "section": "Where delivery is available" },
+        { "docId": "shipping-delivery-policy", "section": "Delivery timelines" }
+      ],
+      "mustInclude": [
+        "Yes, it depends on the delivery pincode",
+        "Express delivery only in Delhi NCR",
+        "Large appliances only in Delhi NCR and listed metro cities",
+        "Cash on delivery is not available for every pincode"
+      ],
+      "mustNotSay": []
+    },
+    {
+      "id": "Q8",
+      "question": "Are there different benefits for Gold members?",
+      "askAs": "GOLD",
+      "expectFound": true,
+      "expectedSources": [{ "docId": "membership-benefits", "section": "Gold member benefits" }],
+      "mustInclude": [
+        "3 NovaPoints per ₹100",
+        "Free standard delivery on all orders",
+        "Free express delivery on orders of ₹2,000 or more in Delhi NCR",
+        "15-day return window (not for opened electronics)",
+        "Priority customer support"
+      ],
+      "mustNotSay": ["30-day return window for Gold"]
+    },
+    {
+      "id": "Q9",
+      "question": "Can I pay with Bitcoin?",
+      "askAs": "STANDARD",
+      "expectFound": false,
+      "expectedSources": [],
+      "mustInclude": [
+        "The approved documents do not mention Bitcoin or cryptocurrency",
+        "followUpRequired is true (offer a support ticket)"
+      ],
+      "acceptableAlternative": "If the payment-methods chunk passes the threshold, an answer that says only that Bitcoin is not among the listed payment methods, with followUpRequired true, is also acceptable.",
+      "mustNotSay": ["Bitcoin is accepted", "Cryptocurrency is accepted"]
+    },
+    {
+      "id": "Q10",
+      "question": "Can I bring my pet dog into a NovaMart store?",
+      "askAs": "STANDARD",
+      "expectFound": false,
+      "expectedSources": [],
+      "mustInclude": [
+        "The approved documents do not cover this",
+        "followUpRequired is true (offer a support ticket)"
+      ],
+      "mustNotSay": ["Pets are allowed", "Pets are not allowed"]
+    }
+  ]
+}
