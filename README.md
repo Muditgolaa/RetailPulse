@@ -117,6 +117,7 @@ Open http://localhost:5173. The status card shows whether the backend and the da
 | `/assistant` | customer | AI shopping assistant (calls `POST /api/ai/recommend`) |
 | `/policy` | customer | Policy assistant (calls `POST /api/ai/ask`) |
 | `/cart` | customer | Cart and simulated checkout (calls `POST /api/orders`) |
+| `/orders` | customer | Order history with status, expected delivery, and cancellation |
 | `/ops` | manager | Inventory, critical stock, replenishment proposals, audit history |
 | `/status` | public | Backend and database health |
 
@@ -150,6 +151,10 @@ The frontend has no mock data left: every screen uses the real API.
 | GET | `/api/products/:id` | public | Look up by SKU (`P101`) or numeric id; includes availability at every store. `404` if unknown |
 | POST | `/api/ai/ask` | signed in | `{question (3–500 chars), docType?, category?}` → `{status: ANSWERED\|NOT_FOUND\|SOURCES_ONLY, answer, confidence, sources[{label, document, section, version, effectiveDate, similarity, excerpt}], followUpRequired, appliedFilters, meta}`. Unknown body fields (e.g. `tier`, `region`) → `400` |
 | POST | `/api/ai/recommend` | signed in | `{query (3–500 chars), storeId?}` → `{interpretedRequirement, recommendations[{productId, name, price, specs, reason, availability, availableQty, alternativeStore}], clarifyingQuestion, source: AI\|FALLBACK, notice, meta}`. `400` invalid body or store, `401` without sign-in, `429` after 10 requests a minute |
+| POST | `/api/orders` | CUSTOMER | `{storeId, fulfilment: PICKUP\|DELIVERY, items[{sku, qty 1–10}]}` → `201` order. Prices come from the database and stock is reserved atomically in one transaction. `409` if a store doesn't have enough stock (nothing is reserved). Prices, totals and user ids in the body → `400` |
+| GET | `/api/orders` | CUSTOMER | The signed-in customer's orders, newest first |
+| GET | `/api/orders/:code` | CUSTOMER | One of the customer's own orders. Another customer's order → `404` |
+| POST | `/api/orders/:code/cancel` | CUSTOMER | Cancels a placed, ready-for-pickup or delayed order, refunds it and releases reserved stock. `409` if already cancelled, shipped or delivered |
 | GET | `/api/ops/dashboard?storeId=` | MANAGER | Stock KPIs (including pending approvals), stock health, and per-item demand, days of cover, severity and suggested quantity |
 | POST | `/api/ops/scan` | MANAGER | `{storeId}` → `{created[], skipped[]}`. Creates **PROPOSED** actions only and never changes inventory. One proposal per item per day; items with an open proposal are skipped |
 | GET | `/api/ops/actions?status=&storeId=` | MANAGER | Actions with payload (calculation inputs and outputs), explanation, store, product and the manager who decided |
@@ -183,6 +188,15 @@ The backend calls Groq's OpenAI-compatible REST API with plain `fetch` (`backend
 2. Add `GROQ_API_KEY=...` to `backend/.env`.
 3. Restart the backend.
 4. Run `npm run ai:check`.
+
+## Orders and checkout
+
+`POST /api/orders` (`backend/src/orders/service.ts`) works in four steps:
+
+1. **Validation:** the body is checked with Zod. The client sends only SKUs and quantities. Prices, totals and the customer come from the database and the verified token.
+2. **Stock reservation:** for each line, `UPDATE inventory SET reserved = reserved + qty WHERE onHand − reserved >= qty`. The conditional update locks the row, so two customers can't buy the last unit. If any line is short, the whole order rolls back and the customer gets `409` with how many units are left.
+3. **Delivery fee:** follows the policy documents. Pickup is free. Standard delivery is free from ₹999, and Silver, Gold and Platinum members always get free standard delivery; otherwise it costs ₹49. Delivery is expected within 3 days, since all stores are in Delhi NCR.
+4. **Payment and audit:** payment is simulated, and the order is marked `PAID`. Placing and cancelling an order write audit events, which managers see on the ops dashboard.
 
 ## Inventory intelligence
 
