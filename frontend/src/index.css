@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Shared brand tokens. Storefront = ivory/ink/forest; Operations = dark slate with emerald/lime status. */
+@theme {
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, Menlo, monospace;
+
+  --color-ivory: #f8f5ee;
+  --color-ivory-deep: #efe9dc;
+  --color-ink: #17191a;
+  --color-ink-soft: #5b5f5c;
+  --color-line: #e2dbcc;
+  --color-forest: #1f4d3a;
+  --color-forest-deep: #163a2b;
+  --color-forest-soft: #e2ebe3;
+  --color-amber: #9a5b0b;
+  --color-amber-soft: #f6ead3;
+  --color-danger: #a8321f;
+  --color-danger-soft: #f7e3de;
+
+  --color-ops-bg: #0e1316;
+  --color-ops-panel: #151c20;
+  --color-ops-raised: #1b2429;
+  --color-ops-line: #26323a;
+  --color-ops-text: #e8edef;
+  --color-ops-muted: #8d9aa1;
+  --color-ops-emerald: #34d399;
+  --color-ops-lime: #c4f063;
+  --color-ops-amber: #f5b84a;
+  --color-ops-red: #f87171;
+}
+
+@layer base {
+  body {
+    @apply bg-ivory font-sans text-ink antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-forest;
+  }
+  .ops :focus-visible {
+    @apply outline-ops-emerald;
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
