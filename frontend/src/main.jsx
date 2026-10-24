@@ -13,6 +13,7 @@ import ShoppingAssistant from "./pages/ShoppingAssistant.jsx";
 import PolicyAssistant from "./pages/PolicyAssistant.jsx";
 import Cart from "./pages/Cart.jsx";
 import Orders from "./pages/Orders.jsx";
+import Account from "./pages/Account.jsx";
 import OpsDashboard from "./pages/OpsDashboard.jsx";
 import HealthPage from "./pages/HealthPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
@@ -34,6 +35,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="policy" element={<PolicyAssistant />} />
             <Route path="cart" element={<Cart />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="account" element={<Account />} />
           </Route>
         </Route>
 

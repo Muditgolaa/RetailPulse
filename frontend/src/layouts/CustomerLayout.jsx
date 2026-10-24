@@ -47,6 +47,9 @@ export default function CustomerLayout() {
               Cart
               <span className="tabular ml-1.5 inline-flex min-w-5 justify-center rounded-full bg-ink px-1.5 text-xs leading-5 text-ivory">{count}</span>
             </Link>
+            <NavLink to="/account" className={({ isActive }) => `text-sm ${isActive ? "text-ink" : "text-ink-soft hover:text-ink"}`}>
+              Account
+            </NavLink>
             <button
               onClick={() => {
                 signOut();

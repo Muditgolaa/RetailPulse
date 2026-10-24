@@ -118,6 +118,7 @@ Open http://localhost:5173. The status card shows whether the backend and the da
 | `/policy` | customer | Policy assistant (calls `POST /api/ai/ask`) |
 | `/cart` | customer | Cart and simulated checkout (calls `POST /api/orders`) |
 | `/orders` | customer | Order history with status, expected delivery, and cancellation |
+| `/account` | customer | Shopping preferences: home store, usual budget and up to 5 favourite brands |
 | `/ops` | manager | Inventory, critical stock, replenishment proposals, audit history |
 | `/status` | public | Backend and database health |
 
@@ -151,6 +152,7 @@ The frontend has no mock data left: every screen uses the real API.
 | GET | `/api/products/:id` | public | Look up by SKU (`P101`) or numeric id; includes availability at every store. `404` if unknown |
 | POST | `/api/ai/ask` | signed in | `{question (3–500 chars), docType?, category?}` → `{status: ANSWERED\|NOT_FOUND\|SOURCES_ONLY, answer, confidence, sources[{label, document, section, version, effectiveDate, similarity, excerpt}], followUpRequired, appliedFilters, meta}`. Unknown body fields (e.g. `tier`, `region`) → `400` |
 | POST | `/api/ai/recommend` | signed in | `{query (3–500 chars), storeId?}` → `{interpretedRequirement, recommendations[{productId, name, price, specs, reason, availability, availableQty, alternativeStore}], clarifyingQuestion, source: AI\|FALLBACK, notice, meta}`. `400` invalid body or store, `401` without sign-in, `429` after 10 requests a minute |
+| PUT | `/api/me/preferences` | signed in | `{preferredStoreId \| null, brands[] (≤5, must exist in the catalogue), maxBudget \| null (₹500–₹10,00,000)}` → `{user}`. Unknown fields such as `role` or `userId` → `400` |
 | POST | `/api/orders` | CUSTOMER | `{storeId, fulfilment: PICKUP\|DELIVERY, items[{sku, qty 1–10}]}` → `201` order. Prices come from the database and stock is reserved atomically in one transaction. `409` if a store doesn't have enough stock (nothing is reserved). Prices, totals and user ids in the body → `400` |
 | GET | `/api/orders` | CUSTOMER | The signed-in customer's orders, newest first |
 | GET | `/api/orders/:code` | CUSTOMER | One of the customer's own orders. Another customer's order → `404` |
@@ -251,6 +253,8 @@ The maths is deterministic TypeScript in `backend/src/inventory/calculator.ts`. 
 5. **Response:** price, specs and stock come from PostgreSQL. A product that is out of stock at the selected store shows the store that has the most units.
 
 **Fallback:** if Groq fails or returns unusable output, rule-based intent and ranking (requirements met, then in stock, then rating) still answer, with `source: "FALLBACK"` and a notice.
+
+**Preferences:** saved preferences never override the request. The saved budget is used only when the request names a product type but no budget, and the response then says "(budget from your preferences)". Favourite brands only break ties between equally good matches, so other brands are still shown. `meta.appliedPreferences` shows what was used.
 
 **Clarification:** ambiguous requests, or no matches, return a `clarifyingQuestion` instead of guessing.
 
