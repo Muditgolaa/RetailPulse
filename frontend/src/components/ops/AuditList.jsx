@@ -2,6 +2,8 @@ const LABELS = {
   REPLENISHMENT_APPROVED: { text: "Approved replenishment", style: "text-ops-emerald" },
   REPLENISHMENT_REJECTED: { text: "Rejected replenishment", style: "text-ops-red" },
   INVENTORY_SCAN: { text: "Ran stock scan", style: "text-ops-lime" },
+  ORDER_PLACED: { text: "Order placed", style: "text-ops-text" },
+  ORDER_CANCELLED: { text: "Order cancelled", style: "text-ops-amber" },
 };
 
 function describe(a) {
@@ -9,6 +11,8 @@ function describe(a) {
   if (a.action === "INVENTORY_SCAN") {
     return `${a.entityId}: ${d.createdActionIds?.length ?? 0} new proposal(s), ${d.skipped?.length ?? 0} already open`;
   }
+  if (a.action === "ORDER_PLACED") return `${a.entityId} at ${d.storeCode} · ₹${Number(d.total).toLocaleString("en-IN")}`;
+  if (a.action === "ORDER_CANCELLED") return `${a.entityId} · was ${String(d.previousStatus).toLowerCase().replace(/_/g, " ")}`;
   const change = d.inventoryChange
     ? ` · ordered ${d.inventoryChange.orderedQty} units, incoming ${d.inventoryChange.incomingBefore} → ${d.inventoryChange.incomingAfter}`
     : "";

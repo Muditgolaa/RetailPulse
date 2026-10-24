@@ -8,6 +8,7 @@ const nav = [
   { to: "/", label: "Shop", end: true },
   { to: "/assistant", label: "Shopping assistant" },
   { to: "/policy", label: "Policy help" },
+  { to: "/orders", label: "My orders" },
 ];
 
 export default function CustomerLayout() {
