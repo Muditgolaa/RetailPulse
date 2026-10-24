@@ -6,7 +6,7 @@ AI retail platform for NovaMart: product discovery, a policy assistant (RAG over
 
 | Part | Tech |
 |---|---|
-| Frontend | React 19, Vite, JavaScript, Tailwind CSS 4, React Router, Axios, Zustand |
+| Frontend | React 19, TypeScript (strict), Vite, Tailwind CSS 4, React Router, Axios, Zustand |
 | Backend | Node.js, Express 5, TypeScript, Zod, Prisma 7 (`@prisma/adapter-pg`) |
 | Database | PostgreSQL 16 with pgvector (Docker) |
 | Tests | Vitest, Supertest |
@@ -104,7 +104,8 @@ Open http://localhost:5173. The status card shows whether the backend and the da
 | backend | `npm test` | Runs the Vitest + Supertest suite. The API tests need the database running and seeded (`npm run db:seed`) |
 | backend | `npm run typecheck` | TypeScript check without output |
 | backend | `npm run build` then `npm start` | Production build and run |
-| frontend | `npm run build` | Production build into `frontend/dist` |
+| frontend | `npm run typecheck` | Strict TypeScript check |
+| frontend | `npm run build` | Type check, then production build into `frontend/dist` |
 | root | `docker compose down` | Stops the database (data is kept in the `pg_data` volume) |
 
 ## Frontend routes
@@ -130,7 +131,7 @@ The login page has **One-click demo access** buttons: "Customer" signs you in as
 
 To remove the demo access completely, delete:
 
-- `frontend/src/components/DemoAccess.jsx`, with its import and usage in `pages/Login.jsx`
+- `frontend/src/components/DemoAccess.tsx`, with its import and usage in `pages/Login.tsx`
 - the `/demo` route in `backend/src/routes/auth.ts`
 
 To turn it off without deleting anything, set `DEMO_LOGIN_ENABLED=false`.
@@ -291,21 +292,33 @@ Each AI call is recorded in `ai_call_logs`.
 ## Project layout
 
 ```
-backend/
-  prisma/schema.prisma     Prisma schema (models come in the next phase)
-  prisma.config.ts         Prisma 7 config, reads DATABASE_URL
-  src/config/env.ts        Environment variables, validated with Zod
-  src/db.ts                Prisma client (pg driver adapter)
-  src/app.ts               Express app and routes
-  src/server.ts            Starts the HTTP server
-  src/routes/health.ts     GET /api/health
-  test/                    Vitest + Supertest
-frontend/
-  vite.config.js           Proxies /api → http://localhost:4000
-  src/api/client.js        Axios instance (baseURL /api)
-  src/pages/HealthPage.jsx Backend/database status page
-docker/init/               SQL run on the first database start (enables pgvector)
-docker-compose.yml
+backend/                     Node.js + Express 5 + TypeScript
+  prisma/                    schema, migrations, seed and SQL checks
+  knowledge/                 policy documents (Markdown) and golden questions
+  src/
+    app.ts, server.ts        Express app, routes and startup
+    config/env.ts            environment variables, validated with Zod
+    auth/                    JWT signing/verification and role middleware
+    routes/                  one router per area: auth, catalog, orders, me, ai, support, kb, ops, health
+    orders/                  checkout with atomic stock reservation, cancellation
+    users/                   customer preferences
+    recommend/               intent extraction, candidate query, guarded ranking, fallback
+    rag/                     ingestion, embeddings, filtered retrieval, grounded answers, uploads
+    support/                 tool-calling support agent, tools and tickets
+    inventory/               reorder calculator, scan, approvals
+    ai/groq.ts               Groq client (chat, JSON mode, tool calling)
+    lib/                     HTTP errors, stock rules, AI rate limit
+  test/                      Vitest + Supertest integration tests
+frontend/                    React 19 + TypeScript + Vite
+  src/
+    types.ts                 shapes of every API response
+    api/                     typed Axios calls, one file per area
+    store/                   Zustand: auth session, cart, selected store, toasts
+    layouts/                 customer and operations layouts, role guard
+    pages/                   one file per route
+    components/              shared UI, storefront, assistant and operations components
+docker/init/                 SQL run on the first database start (enables pgvector)
+docker-compose.yml           PostgreSQL 16 + pgvector
 ```
 
 ## Notes

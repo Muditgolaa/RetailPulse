@@ -47,6 +47,13 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+  /* Sideways-scrolling rows (e.g. the main nav on phones) without a visible scrollbar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
