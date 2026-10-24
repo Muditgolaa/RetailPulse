@@ -6,7 +6,7 @@ process.env.GROQ_API_KEY ||= "gsk_test_key_for_recommend_tests_000000";
 const { app } = await import("../src/app.js");
 const { prisma } = await import("../src/db.js");
 const { signToken } = await import("../src/auth/jwt.js");
-const { resetAiRateLimit } = await import("../src/routes/ai.js");
+const { resetAiRateLimit } = await import("../src/lib/rateLimit.js");
 
 const DEMO = "Recommend a laptop under ₹80,000 for Java development, Docker, and some gaming.";
 const LAPTOP_INTENT = {

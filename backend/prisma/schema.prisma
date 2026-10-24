@@ -60,6 +60,32 @@ enum ActionStatus {
   REJECTED
 }
 
+enum TicketCategory {
+  ORDER
+  DELIVERY
+  RETURN_REFUND
+  PRODUCT
+  PAYMENT
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum TicketSource {
+  CUSTOMER
+  AGENT
+}
+
 model User {
   id               Int            @id @default(autoincrement())
   email            String         @unique @db.VarChar(120)
@@ -73,12 +99,13 @@ model User {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  preferredStore Store?        @relation(fields: [preferredStoreId], references: [id], onDelete: SetNull)
+  preferredStore Store?          @relation(fields: [preferredStoreId], references: [id], onDelete: SetNull)
   cart           Cart?
   orders         Order[]
   decidedActions AgentAction[]
   auditLogs      AuditLog[]
   aiCalls        AiCallLog[]
+  tickets        SupportTicket[]
 
   @@map("users")
 }
@@ -203,9 +230,10 @@ model Order {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  user  User        @relation(fields: [userId], references: [id], onDelete: Restrict)
-  store Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  items OrderItem[]
+  user    User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  store   Store           @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  items   OrderItem[]
+  tickets SupportTicket[]
 
   @@index([userId, createdAt])
   @@index([storeId])
@@ -307,4 +335,25 @@ model AiCallLog {
 
   @@index([feature, createdAt])
   @@map("ai_call_logs")
+}
+
+// Customer support requests, created by the customer or by the support agent on their behalf.
+model SupportTicket {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  orderId   Int?
+  category  TicketCategory
+  priority  TicketPriority @default(MEDIUM)
+  status    TicketStatus   @default(OPEN)
+  summary   String         @db.VarChar(500)
+  createdBy TicketSource
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, priority])
+  @@map("support_tickets")
 }
