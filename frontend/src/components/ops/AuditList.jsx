@@ -6,6 +6,8 @@ const LABELS = {
   ORDER_CANCELLED: { text: "Order cancelled", style: "text-ops-amber" },
   TICKET_CREATED: { text: "Ticket opened", style: "text-ops-text" },
   TICKET_STATUS_CHANGED: { text: "Ticket updated", style: "text-ops-emerald" },
+  KB_DOCUMENT_UPLOADED: { text: "Policy uploaded", style: "text-ops-lime" },
+  KB_DOCUMENT_DELETED: { text: "Policy removed", style: "text-ops-red" },
 };
 
 function describe(a) {
@@ -16,6 +18,8 @@ function describe(a) {
   if (a.action === "ORDER_PLACED") return `${a.entityId} at ${d.storeCode} · ₹${Number(d.total).toLocaleString("en-IN")}`;
   if (a.action === "TICKET_CREATED") return `#${a.entityId} · ${String(d.category).toLowerCase()} · ${String(d.priority).toLowerCase()} priority${d.createdBy === "AGENT" ? " · by assistant" : ""}`;
   if (a.action === "TICKET_STATUS_CHANGED") return `#${a.entityId} · ${String(d.from).toLowerCase()} → ${String(d.to).toLowerCase()}`;
+  if (a.action === "KB_DOCUMENT_UPLOADED") return `${d.title} v${d.version} · ${d.chunks} sections${d.unchanged ? " · unchanged" : ""}`;
+  if (a.action === "KB_DOCUMENT_DELETED") return `${a.entityId} · ${d.chunks} sections removed`;
   if (a.action === "ORDER_CANCELLED") return `${a.entityId} · was ${String(d.previousStatus).toLowerCase().replace(/_/g, " ")}`;
   const change = d.inventoryChange
     ? ` · ordered ${d.inventoryChange.orderedQty} units, incoming ${d.inventoryChange.incomingBefore} → ${d.inventoryChange.incomingAfter}`

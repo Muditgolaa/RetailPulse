@@ -5,6 +5,7 @@ import { requireAuth } from "../auth/middleware.js";
 import { HttpError } from "../lib/http.js";
 import { recommend } from "../recommend/service.js";
 import { ask } from "../rag/answer.js";
+import { DOC_TYPES } from "../rag/ingest.js";
 import { readPreferences } from "../users/preferences.js";
 import { aiRateLimit } from "../lib/rateLimit.js";
 
@@ -21,7 +22,7 @@ const recommendBody = z.object({
 const askBody = z
   .object({
     question: z.string().trim().min(3, "Ask a question").max(500),
-    docType: z.enum(["RETURN_POLICY", "SHIPPING_POLICY", "MEMBERSHIP", "WARRANTY", "PAYMENT_POLICY"]).optional(),
+    docType: z.enum(DOC_TYPES).optional(),
     category: z.string().regex(/^[A-Za-z &]{2,40}$/).optional(),
   })
   .strict();

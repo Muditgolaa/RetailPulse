@@ -120,6 +120,7 @@ Open http://localhost:5173. The status card shows whether the backend and the da
 | `/orders` | customer | Order history with status, expected delivery, and cancellation |
 | `/support` | customer | Support assistant chat (checks orders and policy, opens tickets) and the customer's tickets |
 | `/account` | customer | Shopping preferences: home store, usual budget and up to 5 favourite brands |
+| `/ops/knowledge` | manager | Upload, list and remove policy documents used by the policy assistant and support agent |
 | `/ops` | manager | Inventory, critical stock, replenishment proposals, audit history |
 | `/status` | public | Backend and database health |
 
@@ -158,6 +159,9 @@ The frontend has no mock data left: every screen uses the real API.
 | GET | `/api/orders` | CUSTOMER | The signed-in customer's orders, newest first |
 | GET | `/api/orders/:code` | CUSTOMER | One of the customer's own orders. Another customer's order → `404` |
 | POST | `/api/orders/:code/cancel` | CUSTOMER | Cancels a placed, ready-for-pickup or delayed order, refunds it and releases reserved stock. `409` if already cancelled, shipped or delivered |
+| GET | `/api/kb/documents` | MANAGER | One row per indexed document: title, type, version, effective date, tiers, sections and chunk count |
+| POST | `/api/kb/documents` | MANAGER | `{title, docType, version, effectiveDate, region?, tier?, category?, content}` (Markdown or text, ≤100,000 characters) → `201` with sections indexed. The same title replaces the previous version; an identical upload returns `200 {unchanged: true}`. Audited |
+| DELETE | `/api/kb/documents/:documentId` | MANAGER | Removes a document from search. `404` if unknown. Audited |
 | POST | `/api/support/chat` | CUSTOMER | `{message, history[≤10 {role: user\|assistant, content}]}` → `{reply, toolsUsed[], ticket}`. Tool-calling agent; see below |
 | POST | `/api/support/tickets` | CUSTOMER | `{category, priority?, summary, orderCode?}` → `201` ticket. The order must be the customer's own (`404` otherwise). At most 3 tickets an hour (`429`) |
 | GET | `/api/support/tickets?status=` | signed in | Customers get their own tickets; managers get everyone's |
@@ -257,6 +261,8 @@ The maths is deterministic TypeScript in `backend/src/inventory/calculator.ts`. 
    The request body cannot set these; unknown fields are rejected with `400`. `docType` and `category` can only narrow the results.
 4. **Threshold:** chunks below `RAG_MIN_SIMILARITY` (default 0.45, tuned on the golden set) are not evidence. If none qualify, the answer is `NOT_FOUND` and **the answer model is not called**.
 5. **Grounded answer:** Groq answers only from the numbered sources and must cite them. Citations are built from our chunk metadata, and labels the model invents are dropped. If the model says the sources don't answer the question, or it cites none, the response is `NOT_FOUND`. If Groq is down, the response is `SOURCES_ONLY`: the matching sections, with no generated text.
+
+**Uploads:** managers can add documents from the Knowledge base page without running a script. An upload is split at `## ` headings (plain text with no headings becomes one "Overview" section), embedded, and searchable immediately. It uses the same region, tier and effective-date filters as the built-in documents. The document id comes from the title, so uploading the same title again replaces the old version.
 
 **About `confidence`:** HIGH, MEDIUM or LOW is a band based on how similar the cited sections are to the question. It is **not a probability that the answer is correct**, and the UI labels it as policy-match strength.
 
