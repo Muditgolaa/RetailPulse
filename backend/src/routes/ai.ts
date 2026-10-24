@@ -5,6 +5,7 @@ import { requireAuth } from "../auth/middleware.js";
 import { HttpError } from "../lib/http.js";
 import { recommend } from "../recommend/service.js";
 import { ask } from "../rag/answer.js";
+import { readPreferences } from "../users/preferences.js";
 
 export const aiRouter = Router();
 aiRouter.use(requireAuth);
@@ -46,5 +47,5 @@ aiRouter.post("/recommend", aiRateLimit, async (req, res) => {
   const { query, storeId: requested } = recommendBody.parse(req.body);
   const storeId = requested ?? req.user!.preferredStoreId ?? 1;
   if (!(await prisma.store.findUnique({ where: { id: storeId } }))) throw new HttpError(400, "Unknown storeId");
-  res.json(await recommend(query, storeId, req.user!.id));
+  res.json(await recommend(query, storeId, req.user!.id, readPreferences(req.user!.preferences)));
 });
