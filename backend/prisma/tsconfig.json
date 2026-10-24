@@ -1,0 +1,9 @@
+{
+  // Type-checks the seed and verify scripts (they run with tsx and are never compiled to dist/).
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true
+  },
+  "include": ["./*.ts", "../src/**/*.ts"]
+}
