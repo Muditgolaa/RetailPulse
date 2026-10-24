@@ -16,6 +16,7 @@ import Orders from "./pages/Orders.jsx";
 import Account from "./pages/Account.jsx";
 import Support from "./pages/Support.jsx";
 import OpsDashboard from "./pages/OpsDashboard.jsx";
+import OpsKnowledge from "./pages/OpsKnowledge.jsx";
 import HealthPage from "./pages/HealthPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import "./index.css";
@@ -44,6 +45,7 @@ createRoot(document.getElementById("root")).render(
         <Route element={<RequireRole role="MANAGER" />}>
           <Route path="ops" element={<OpsLayout />}>
             <Route index element={<OpsDashboard />} />
+            <Route path="knowledge" element={<OpsKnowledge />} />
           </Route>
         </Route>
 

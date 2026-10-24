@@ -7,6 +7,7 @@ import { aiRouter } from "./routes/ai.js";
 import { ordersRouter } from "./routes/orders.js";
 import { meRouter } from "./routes/me.js";
 import { supportRouter } from "./routes/support.js";
+import { kbRouter } from "./routes/kb.js";
 import { errorHandler, notFound } from "./lib/http.js";
 
 export const app = express();
@@ -21,6 +22,7 @@ app.use("/api/ops", opsRouter); // manager only
 app.use("/api/ai", aiRouter); // signed-in users
 app.use("/api/orders", ordersRouter); // customers
 app.use("/api/me", meRouter); // signed-in users
+app.use("/api/kb", kbRouter); // manager only
 app.use("/api/support", supportRouter); // customers chat and open tickets; managers handle them
 
 app.use("/api", notFound);

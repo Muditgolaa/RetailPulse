@@ -6,13 +6,14 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { embed, toVectorLiteral } from "./embed.js";
 
-const TIERS = ["ALL", "STANDARD", "SILVER", "GOLD", "PLATINUM"] as const;
+export const TIERS = ["ALL", "STANDARD", "SILVER", "GOLD", "PLATINUM"] as const;
+export const DOC_TYPES = ["RETURN_POLICY", "SHIPPING_POLICY", "MEMBERSHIP", "WARRANTY", "PAYMENT_POLICY", "PRODUCT_MANUAL", "STORE_PROCEDURE", "OTHER"] as const;
 const MAX_CHUNK_WORDS = 220;
 
 const frontMatterSchema = z.object({
   docId: z.string().regex(/^[a-z0-9-]{3,80}$/),
   title: z.string().min(1).max(160),
-  docType: z.string().regex(/^[A-Z_]{2,30}$/),
+  docType: z.enum(DOC_TYPES),
   version: z.string().min(1).max(20),
   effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   region: z.string().length(2),

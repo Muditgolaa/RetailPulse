@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "react-router";
+import { Link, NavLink, Outlet, useNavigate } from "react-router";
 import MockBanner from "../components/ui/MockBanner.jsx";
 import StoreSelect from "../components/StoreSelect.jsx";
 import { useAuth } from "../store/auth.js";
@@ -15,6 +15,13 @@ export default function OpsLayout() {
           <Link to="/ops" className="font-display text-xl tracking-tight">
             RetailPulse<span className="ml-2 rounded bg-ops-emerald/15 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-ops-emerald">Ops</span>
           </Link>
+          <nav className="flex gap-4 text-sm">
+            {[["/ops", "Dashboard", true], ["/ops/knowledge", "Knowledge base", false]].map(([to, text, end]) => (
+              <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? "text-ops-text" : "text-ops-muted hover:text-ops-text")}>
+                {text}
+              </NavLink>
+            ))}
+          </nav>
           <div className="ml-auto flex flex-wrap items-center gap-4">
             <StoreSelect dark id="ops-store" />
             <span className="hidden text-sm text-ops-muted sm:inline">{user?.name}</span>
