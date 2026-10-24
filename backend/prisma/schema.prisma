@@ -1,0 +1,310 @@
+// RetailPulse AI data model. The connection URL lives in prisma.config.ts.
+// Tables use snake_case names; extra CHECK constraints are in the init migration SQL.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  MANAGER
+}
+
+enum MembershipTier {
+  STANDARD
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum StoreType {
+  STORE
+  WAREHOUSE
+}
+
+enum Fulfilment {
+  PICKUP
+  DELIVERY
+}
+
+enum OrderStatus {
+  PLACED
+  READY_FOR_PICKUP
+  SHIPPED
+  DELAYED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum AgentType {
+  INVENTORY
+  SUPPORT
+  PROMOTION
+}
+
+enum ActionStatus {
+  PROPOSED
+  APPROVED
+  EXECUTED
+  REJECTED
+}
+
+model User {
+  id               Int            @id @default(autoincrement())
+  email            String         @unique @db.VarChar(120)
+  passwordHash     String
+  name             String         @db.VarChar(80)
+  role             Role           @default(CUSTOMER)
+  membershipTier   MembershipTier @default(STANDARD)
+  country          String         @default("IN") @db.Char(2)
+  preferredStoreId Int?
+  preferences      Json           @default("{}") // { brands: [], maxBudget }
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  preferredStore Store?        @relation(fields: [preferredStoreId], references: [id], onDelete: SetNull)
+  cart           Cart?
+  orders         Order[]
+  decidedActions AgentAction[]
+  auditLogs      AuditLog[]
+  aiCalls        AiCallLog[]
+
+  @@map("users")
+}
+
+model Store {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique @db.VarChar(10) // DEL01
+  name      String    @db.VarChar(80)
+  city      String    @db.VarChar(60)
+  type      StoreType @default(STORE)
+  createdAt DateTime  @default(now())
+
+  inventory    Inventory[]
+  sales        Sale[]
+  orders       Order[]
+  agentActions AgentAction[]
+  customers    User[]
+
+  @@map("stores")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  sku         String   @unique @db.VarChar(20) // P101
+  name        String   @db.VarChar(120)
+  category    String   @db.VarChar(40)
+  brand       String   @db.VarChar(40)
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  cost        Decimal  @db.Decimal(10, 2)
+  rating      Decimal  @default(0) @db.Decimal(2, 1)
+  specs       Json     @default("{}")
+  imageUrl    String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  inventory    Inventory[]
+  sales        Sale[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  agentActions AgentAction[]
+
+  @@index([category, price])
+  @@index([brand])
+  @@map("products")
+}
+
+model Inventory {
+  storeId      Int
+  productId    Int
+  onHand       Int
+  reserved     Int      @default(0)
+  incomingQty  Int      @default(0)
+  reorderPoint Int
+  safetyStock  Int
+  leadTimeDays Int
+  version      Int      @default(0) // optimistic locking
+  updatedAt    DateTime @updatedAt
+
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([storeId, productId])
+  @@index([productId])
+  @@map("inventory")
+}
+
+model Sale {
+  storeId   Int
+  productId Int
+  saleDate  DateTime @db.Date
+  qty       Int
+
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([storeId, productId, saleDate])
+  @@index([storeId, saleDate])
+  @@map("sales_daily")
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  cartId    Int
+  productId Int
+  qty       Int
+  addedAt   DateTime @default(now())
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([cartId, productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id                 Int           @id @default(autoincrement())
+  code               String        @unique @db.VarChar(12) // ORD-1023
+  userId             Int
+  storeId            Int
+  fulfilment         Fulfilment
+  status             OrderStatus   @default(PLACED)
+  paymentStatus      PaymentStatus @default(PAID) // payment is simulated
+  statusNote         String?
+  subtotal           Decimal       @db.Decimal(12, 2)
+  deliveryFee        Decimal       @default(0) @db.Decimal(10, 2)
+  total              Decimal       @db.Decimal(12, 2)
+  expectedDeliveryAt DateTime?
+  deliveredAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  store Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([storeId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  qty       Int
+  unitPrice Decimal @db.Decimal(10, 2) // price at time of order
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, productId])
+  @@map("order_items")
+}
+
+// One retrieval unit of a policy document. Filled by the ingestion step (not seeded).
+model KnowledgeChunk {
+  id            String                      @id @default(uuid()) @db.Uuid
+  documentId    String                      @db.VarChar(80) // e.g. online-return-policy
+  documentTitle String                      @db.VarChar(160)
+  docType       String                      @db.VarChar(30) // RETURN_POLICY, MANUAL, ...
+  section       String                      @db.VarChar(160)
+  version       String                      @db.VarChar(20)
+  effectiveDate DateTime                    @db.Date
+  region        String                      @default("IN") @db.Char(2)
+  category      String?                     @db.VarChar(40)
+  tier          String                      @default("ALL") @db.VarChar(10)
+  chunkIndex    Int
+  content       String
+  contentHash   String                      @db.Char(64)
+  embedding     Unsupported("vector(384)")?
+  createdAt     DateTime                    @default(now())
+
+  @@unique([documentId, version, chunkIndex])
+  @@index([region, tier, effectiveDate])
+  @@index([docType])
+  @@map("knowledge_chunks")
+}
+
+model AgentAction {
+  id             Int          @id @default(autoincrement())
+  agent          AgentType
+  actionType     String       @db.VarChar(30) // REPLENISH, TRANSFER, DISCOUNT
+  storeId        Int?
+  productId      Int?
+  payload        Json // formula inputs and outputs
+  explanation    String?
+  status         ActionStatus @default(PROPOSED)
+  idempotencyKey String       @unique @db.VarChar(100)
+  decidedById    Int?
+  decidedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  decidedBy User?    @relation(fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([storeId])
+  @@map("agent_actions")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?
+  actorEmail String?  @db.VarChar(120)
+  action     String   @db.VarChar(60)
+  entity     String   @db.VarChar(40)
+  entityId   String   @db.VarChar(60)
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AiCallLog {
+  id               Int      @id @default(autoincrement())
+  feature          String   @db.VarChar(30) // RECOMMEND, ASK, INVENTORY_EXPLAIN, ...
+  model            String   @db.VarChar(80)
+  userId           Int?
+  latencyMs        Int
+  promptTokens     Int?
+  completionTokens Int?
+  success          Boolean
+  error            String?
+  createdAt        DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([feature, createdAt])
+  @@map("ai_call_logs")
+}
