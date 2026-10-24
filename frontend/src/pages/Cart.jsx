@@ -8,29 +8,39 @@ import { useStoreName } from "../components/StoreSelect.jsx";
 import { errorMessage } from "../api/client.js";
 import { placeOrder } from "../api/shop.js";
 import { formatPrice } from "../lib/format.js";
+import { useAuth } from "../store/auth.js";
 import { cartSubtotal, useCart } from "../store/cart.js";
 import { useShop } from "../store/shop.js";
 import { toast } from "../store/toast.js";
 
+// Preview of the server's rule (backend/src/orders/service.ts). The server's figure is the one charged.
+function estimateDeliveryFee(subtotal, fulfilment, tier) {
+  if (fulfilment === "PICKUP" || ["SILVER", "GOLD", "PLATINUM"].includes(tier) || subtotal >= 999) return 0;
+  return 49;
+}
+
 export default function Cart() {
   const { items, setQty, remove, clear } = useCart();
+  const tier = useAuth((s) => s.user?.membershipTier);
   const storeId = useShop((s) => s.storeId);
   const storeName = useStoreName(storeId);
   const [fulfilment, setFulfilment] = useState("DELIVERY");
   const [placing, setPlacing] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
   const [placedOrder, setPlacedOrder] = useState(null);
+
   const subtotal = cartSubtotal(items);
+  const fee = estimateDeliveryFee(subtotal, fulfilment, tier);
 
   async function checkout() {
     setPlacing(true);
     setCheckoutError(null);
     try {
-      // Payment is simulated by the server; the order only counts once the API confirms it.
+      // Only SKUs and quantities are sent; the server prices the order and reserves the stock.
       const order = await placeOrder({ storeId, fulfilment, items: items.map(({ sku, qty }) => ({ sku, qty })) });
       setPlacedOrder(order);
       clear();
-      toast.success("Order placed", order?.code ? `Order ${order.code}` : undefined);
+      toast.success("Order placed", `${order.code} · ${formatPrice(order.total)}`);
     } catch (err) {
       setCheckoutError(errorMessage(err));
       toast.error("Order not placed", errorMessage(err));
@@ -39,19 +49,7 @@ export default function Cart() {
     }
   }
 
-  if (placedOrder) {
-    return (
-      <div className="mx-auto max-w-lg text-center">
-        <p className="text-xs uppercase tracking-[0.18em] text-forest">Order confirmed by the server</p>
-        <h1 className="mt-3 font-display text-4xl">Thank you</h1>
-        <p className="mt-3 text-ink-soft">
-          Order {placedOrder.code}
-          {placedOrder.total !== undefined && ` · ${formatPrice(placedOrder.total)}`}
-        </p>
-        <Link to="/" className="mt-8 inline-block text-forest hover:underline">Continue shopping</Link>
-      </div>
-    );
-  }
+  if (placedOrder) return <OrderConfirmation order={placedOrder} />;
 
   if (items.length === 0) {
     return (
@@ -98,7 +96,7 @@ export default function Cart() {
           <fieldset className="mt-4 flex flex-col gap-2 text-sm">
             <legend className="mb-2 text-ink-soft">How would you like it?</legend>
             {[
-              ["DELIVERY", "Home delivery"],
+              ["DELIVERY", "Home delivery (2–3 days in Delhi NCR)"],
               ["PICKUP", `Pick up at ${storeName || "your store"}`],
             ].map(([value, label]) => (
               <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 ${fulfilment === value ? "border-forest bg-forest-soft/60" : "border-line"}`}>
@@ -110,7 +108,8 @@ export default function Cart() {
 
           <dl className="mt-6 flex flex-col gap-2 text-sm">
             <div className="flex justify-between"><dt className="text-ink-soft">Subtotal</dt><dd className="tabular">{formatPrice(subtotal)}</dd></div>
-            <div className="flex justify-between"><dt className="text-ink-soft">Delivery</dt><dd>{fulfilment === "PICKUP" ? "Free" : "Calculated by the server"}</dd></div>
+            <div className="flex justify-between"><dt className="text-ink-soft">Delivery</dt><dd className="tabular">{fee === 0 ? "Free" : formatPrice(fee)}</dd></div>
+            <div className="flex justify-between border-t border-line pt-2 font-semibold"><dt>Total</dt><dd className="tabular">{formatPrice(subtotal + fee)}</dd></div>
           </dl>
 
           {checkoutError && <p role="alert" className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">Order not placed. {checkoutError}</p>}
@@ -118,8 +117,25 @@ export default function Cart() {
           <Button size="lg" className="mt-6 w-full" onClick={checkout} loading={placing}>
             Place order
           </Button>
-          <p className="mt-3 text-xs text-ink-soft">Payment is simulated for this demo. Your cart stays here until the server confirms the order.</p>
+          <p className="mt-3 text-xs text-ink-soft">Payment is simulated. Prices and stock are checked again when you place the order.</p>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function OrderConfirmation({ order }) {
+  return (
+    <div className="mx-auto flex max-w-lg flex-col items-center gap-3 text-center">
+      <p className="text-xs uppercase tracking-[0.18em] text-forest">Order confirmed</p>
+      <h1 className="font-display text-4xl">Thank you</h1>
+      <p className="text-ink-soft">
+        {order.code} · {formatPrice(order.total)} · {order.fulfilment === "PICKUP" ? `pick up at ${order.store.name}` : "home delivery"}
+      </p>
+      {order.statusNote && <p className="text-sm text-ink-soft">{order.statusNote}</p>}
+      <div className="mt-6 flex gap-6">
+        <Link to="/orders" className="text-forest hover:underline">View my orders</Link>
+        <Link to="/" className="text-forest hover:underline">Continue shopping</Link>
       </div>
     </div>
   );
