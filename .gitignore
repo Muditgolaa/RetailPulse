@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+docs
+
+# Build output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Generated Prisma client (rebuilt by `npm install` / `npm run db:generate`)
+backend/src/generated/
+
+# Environment secrets (commit only .env.example)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+.DS_Store
+Thumbs.db
+
+# Downloaded embedding model (re-downloaded automatically)
+.cache/
