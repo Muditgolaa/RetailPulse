@@ -1,0 +1,25 @@
+# Render Blueprint: one Docker web service that serves the API and the frontend.
+# The database is external (e.g. Neon); paste its connection string as DATABASE_URL. See DEPLOYMENT.md.
+services:
+  - type: web
+    name: retailpulse
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false # set in the dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      # Public demo: one-click demo sign-in (server) and demo buttons (frontend build).
+      # Render passes environment variables to the Docker build as build arguments.
+      - key: DEMO_LOGIN_ENABLED
+        value: "true"
+      - key: VITE_DEMO_ACCESS
+        value: "true"

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router";
 import Button from "../components/ui/Button";
-import DemoAccess, { DEMO_ACCESS } from "../components/DemoAccess"; // temporary hackathon demo access
+import DemoAccess, { DEMO_ACCESS } from "../components/DemoAccess";
 import { errorMessage, httpStatus } from "../api/client";
 import { demoLogin, login } from "../api/shop";
 import { homeFor, useAuth } from "../store/auth";

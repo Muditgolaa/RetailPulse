@@ -125,9 +125,13 @@ Open http://localhost:5173. The status card shows whether the backend and the da
 | `/ops` | manager | Inventory, critical stock, replenishment proposals, audit history |
 | `/status` | public | Backend and database health |
 
-### Hackathon demo access (temporary)
+### One-click demo access
 
-The login page has **One-click demo access** buttons: "Customer" signs you in as Priya, a Gold member, and "Store manager" as Rahul at DEL01. Neither needs a password. The backend issues a real token through `POST /api/auth/demo`, which only works when `DEMO_LOGIN_ENABLED=true` and `NODE_ENV` is not `production`. The buttons only appear in `npm run dev`. They're for judging and quick checks.
+The login page has **One-click demo access** buttons: "Customer" signs you in as Priya, a Gold member, and "Store manager" as Rahul at DEL01. Neither needs a password. The backend issues a real token through `POST /api/auth/demo`, which only works when `DEMO_LOGIN_ENABLED=true`.
+
+- **Development:** the buttons show in `npm run dev` unless `VITE_DEMO_ACCESS=false`.
+- **Production:** the buttons show only in a build made with `VITE_DEMO_ACCESS=true`, and the server needs `DEMO_LOGIN_ENABLED=true`.
+- **Use with care:** turn it on only for a public demo with fictional data, because every visitor shares the demo accounts.
 
 To remove the demo access completely, delete:
 
@@ -148,7 +152,7 @@ The frontend has no mock data left: every screen uses the real API.
 | GET | `/api/health/ai` | public | Groq connectivity via the model list (no tokens spent, cached 60 s): `{provider, configured, reachable, model, modelAvailable, latencyMs, error?}`. `503` if not usable. Never includes the key |
 | POST | `/api/auth/login` | public | `{email, password}` → `{token, user}`. `400` invalid body, `401` wrong email or password |
 | GET | `/api/auth/me` | signed in | `{user}` from the token. `401` if missing, invalid or expired |
-| POST | `/api/auth/demo` | public, dev only | `{account: "customer"\|"manager"}` → `{token, user}`. `404` unless `DEMO_LOGIN_ENABLED=true` |
+| POST | `/api/auth/demo` | public, opt-in | `{account: "customer"\|"manager"}` → `{token, user}`. `404` unless `DEMO_LOGIN_ENABLED=true` |
 | GET | `/api/stores` | public | `[{id, code, name, city}]` |
 | GET | `/api/products` | public | Query `q, category, brand, minPrice, maxPrice, storeId, inStock, sort, page, size`. Returns `{content, totalElements, totalPages, number, size}`. `availability` is included when `storeId` is given |
 | GET | `/api/products/facets` | public | `{categories, brands, priceRange}` |
@@ -288,6 +292,12 @@ The maths is deterministic TypeScript in `backend/src/inventory/calculator.ts`. 
 **Clarification:** ambiguous requests, or no matches, return a `clarifyingQuestion` instead of guessing.
 
 Each AI call is recorded in `ai_call_logs`.
+
+## Deployment
+
+The app deploys as one Docker image (`Dockerfile`): Express serves the API and the built frontend on the same origin, and runs `prisma migrate deploy` on start. `render.yaml` deploys it to Render, with a free Neon PostgreSQL database for pgvector.
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the step-by-step guide.
 
 ## Project layout
 

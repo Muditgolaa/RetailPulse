@@ -12,8 +12,11 @@ const schema = z.object({
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   JWT_EXPIRES_IN: z.string().default("8h"),
-  // Temporary hackathon shortcut: POST /api/auth/demo signs in as a seeded demo account. Never in production.
+  // POST /api/auth/demo signs in as a seeded demo account without a password. Off unless set; only enable it
+  // for a public demo that holds fictional data (the demo accounts are shared by every visitor).
   DEMO_LOGIN_ENABLED: z.stringbool().default(false),
+  // Production: folder with the built frontend (frontend/dist), served by Express on the same origin as /api.
+  FRONTEND_DIST: z.string().optional(),
   // Groq (OpenAI-compatible API). Optional: without a key the app runs and AI features report "not configured".
   GROQ_API_KEY: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(20).optional()),
   GROQ_MODEL: z.string().min(1).default("openai/gpt-oss-120b"),
@@ -32,7 +35,4 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = {
-  ...parsed.data,
-  DEMO_LOGIN_ENABLED: parsed.data.DEMO_LOGIN_ENABLED && parsed.data.NODE_ENV !== "production",
-};
+export const env = parsed.data;

@@ -31,9 +31,9 @@ authRouter.get("/me", requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
 
-// ── Temporary hackathon demo sign-in ─────────────────────────────────────────
+// ── One-click demo sign-in ───────────────────────────────────────────────────
 // Issues a normal token for one of the two seeded demo accounts, without a password.
-// Only exists when DEMO_LOGIN_ENABLED=true and NODE_ENV is not production.
+// Only works when DEMO_LOGIN_ENABLED=true; enable it only for a demo with fictional data.
 const DEMO_ACCOUNTS = { customer: "priya@novamart.test", manager: "rahul@novamart.test" } as const;
 const demoBody = z.object({ account: z.enum(["customer", "manager"]) });
 
