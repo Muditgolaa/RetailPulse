@@ -110,6 +110,23 @@ describe("prices, specs and stock come from PostgreSQL", () => {
   });
 });
 
+describe("model output variations", () => {
+  it("accepts null brands and mustHave from the model instead of falling back", async () => {
+    mockGroq({ ...LAPTOP_INTENT, brands: null, mustHave: null }, { recommendations: [{ productId: "P103", reason: "16 GB RAM with RTX 2050." }] });
+    const res = await ask({ query: DEMO, storeId: 1 });
+    expect(res.body.source).toBe("AI");
+    expect(res.body.notice).toBeNull();
+    expect(res.body.recommendations[0].productId).toBe("P103");
+  });
+
+  it("tells the model what each category contains", async () => {
+    mockGroq({ ...LAPTOP_INTENT, category: "TV & Audio", maxBudget: null }, { recommendations: [{ productId: "P404", reason: "Noise cancelling." }] });
+    await ask({ query: "Noise-cancelling headphones for travel", storeId: 1 });
+    const intentRequest = String(vi.mocked(fetch).mock.calls[0][1]?.body);
+    expect(intentRequest).toContain('\\"TV & Audio\\" (TVs, headphones');
+  });
+});
+
 describe("deterministic fallback", () => {
   it("answers the demo request without the AI provider", async () => {
     groqDown();
