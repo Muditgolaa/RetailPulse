@@ -1,13 +1,15 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// HACKATHON DEMO ACCESS (temporary)
+// ONE-CLICK DEMO ACCESS
 // One-click sign-in as a seeded demo account, no password. The server issues a
 // real token through POST /api/auth/demo (only when DEMO_LOGIN_ENABLED=true).
-// To remove: delete this file and its lines in pages/Login.jsx, the /demo route in
+// To remove: delete this file and its lines in pages/Login.tsx, the /demo route in
 // backend/src/routes/auth.ts, or just set VITE_DEMO_ACCESS=false / DEMO_LOGIN_ENABLED=false.
 // ──────────────────────────────────────────────────────────────────────────────
 import { useState } from "react";
 
-export const DEMO_ACCESS = import.meta.env.DEV && import.meta.env.VITE_DEMO_ACCESS !== "false";
+// On by default in `npm run dev`; in a production build only when built with VITE_DEMO_ACCESS=true
+// (for a public demo). The server must also have DEMO_LOGIN_ENABLED=true.
+export const DEMO_ACCESS = import.meta.env.DEV ? import.meta.env.VITE_DEMO_ACCESS !== "false" : import.meta.env.VITE_DEMO_ACCESS === "true";
 
 type Account = "customer" | "manager";
 

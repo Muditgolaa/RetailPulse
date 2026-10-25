@@ -2,8 +2,10 @@
 // Tables use snake_case names; extra CHECK constraints are in the init migration SQL.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js" // compiled output (dist/) must import .js files to run in plain Node
 }
 
 datasource db {
