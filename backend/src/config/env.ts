@@ -12,9 +12,13 @@ const schema = z.object({
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   JWT_EXPIRES_IN: z.string().default("8h"),
-  // POST /api/auth/demo signs in as a seeded demo account without a password. Off unless set; only enable it
-  // for a public demo that holds fictional data (the demo accounts are shared by every visitor).
+  // Starting value of the admin-controlled "demo access" setting, used until an admin changes it on the website.
   DEMO_LOGIN_ENABLED: z.stringbool().default(false),
+  // Comma-separated emails that become ADMIN when they sign up or sign in (e.g. your own email).
+  ADMIN_EMAILS: z
+    .string()
+    .default("")
+    .transform((v) => v.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)),
   // Production: folder with the built frontend (frontend/dist), served by Express on the same origin as /api.
   FRONTEND_DIST: z.string().optional(),
   // Groq (OpenAI-compatible API). Optional: without a key the app runs and AI features report "not configured".

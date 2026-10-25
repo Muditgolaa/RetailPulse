@@ -5,6 +5,7 @@ type Details = {
   createdActionIds?: number[]; skipped?: unknown[]; storeCode?: string; total?: number;
   category?: string; priority?: string; createdBy?: string; from?: string; to?: string;
   title?: string; version?: string; chunks?: number; unchanged?: boolean; previousStatus?: string; note?: string | null;
+  changes?: Record<string, unknown>; email?: string; role?: string;
   inventoryChange?: { orderedQty: number; incomingBefore: number; incomingAfter: number } | null;
 };
 
@@ -18,6 +19,10 @@ const LABELS: Record<string, { text: string; style: string }> = {
   TICKET_STATUS_CHANGED: { text: "Ticket updated", style: "text-ops-emerald" },
   KB_DOCUMENT_UPLOADED: { text: "Policy uploaded", style: "text-ops-lime" },
   KB_DOCUMENT_DELETED: { text: "Policy removed", style: "text-ops-red" },
+  SETTINGS_CHANGED: { text: "Settings changed", style: "text-ops-lime" },
+  USER_UPDATED: { text: "User updated", style: "text-ops-text" },
+  USER_REGISTERED: { text: "New account", style: "text-ops-emerald" },
+  USER_PROMOTED_TO_ADMIN: { text: "Admin added", style: "text-ops-amber" },
 };
 
 function describe(a: AuditEntry) {
@@ -30,6 +35,10 @@ function describe(a: AuditEntry) {
   if (a.action === "TICKET_STATUS_CHANGED") return `#${a.entityId} · ${String(d.from).toLowerCase()} → ${String(d.to).toLowerCase()}`;
   if (a.action === "KB_DOCUMENT_UPLOADED") return `${d.title} v${d.version} · ${d.chunks} sections${d.unchanged ? " · unchanged" : ""}`;
   if (a.action === "KB_DOCUMENT_DELETED") return `${a.entityId} · ${d.chunks} sections removed`;
+  if (a.action === "SETTINGS_CHANGED") return Object.entries(d.changes ?? {}).map(([k, v]) => `${k} ${v ? "on" : "off"}`).join(", ");
+  if (a.action === "USER_UPDATED") return `${d.email} · ${Object.entries(d.changes ?? {}).map(([k, v]) => `${k} → ${String(v).toLowerCase()}`).join(", ")}`;
+  if (a.action === "USER_REGISTERED") return `${a.actorEmail}${d.role === "ADMIN" ? " · admin" : ""}`;
+  if (a.action === "USER_PROMOTED_TO_ADMIN") return `${a.actorEmail} (listed in ADMIN_EMAILS)`;
   if (a.action === "ORDER_CANCELLED") return `${a.entityId} · was ${String(d.previousStatus).toLowerCase().replace(/_/g, " ")}`;
   const change = d.inventoryChange
     ? ` · ordered ${d.inventoryChange.orderedQty} units, incoming ${d.inventoryChange.incomingBefore} → ${d.inventoryChange.incomingAfter}`

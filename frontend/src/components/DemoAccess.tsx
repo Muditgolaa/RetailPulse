@@ -1,15 +1,6 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// ONE-CLICK DEMO ACCESS
-// One-click sign-in as a seeded demo account, no password. The server issues a
-// real token through POST /api/auth/demo (only when DEMO_LOGIN_ENABLED=true).
-// To remove: delete this file and its lines in pages/Login.tsx, the /demo route in
-// backend/src/routes/auth.ts, or just set VITE_DEMO_ACCESS=false / DEMO_LOGIN_ENABLED=false.
-// ──────────────────────────────────────────────────────────────────────────────
+// One-click sign-in as a seeded demo account, without a password. The server issues a real token through
+// POST /api/auth/demo. Admins switch this on or off from Admin → Site settings, so no rebuild is needed.
 import { useState } from "react";
-
-// On by default in `npm run dev`; in a production build only when built with VITE_DEMO_ACCESS=true
-// (for a public demo). The server must also have DEMO_LOGIN_ENABLED=true.
-export const DEMO_ACCESS = import.meta.env.DEV ? import.meta.env.VITE_DEMO_ACCESS !== "false" : import.meta.env.VITE_DEMO_ACCESS === "true";
 
 type Account = "customer" | "manager";
 
@@ -32,8 +23,8 @@ export default function DemoAccess({ onPick }: { onPick: (account: Account) => P
 
   return (
     <section className="rounded-lg border border-forest/25 bg-forest-soft/60 p-4" aria-labelledby="demo-access-title">
-      <p id="demo-access-title" className="text-sm font-semibold text-forest">One-click demo access</p>
-      <p className="mt-0.5 text-xs text-ink-soft">Signs in as a seeded demo account without a password.</p>
+      <p id="demo-access-title" className="text-sm font-semibold text-forest">Try the demo</p>
+      <p className="mt-0.5 text-xs text-ink-soft">Sign in instantly as a sample account. All data is fictional.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {ACCOUNTS.map((a) => (
           <button

@@ -17,6 +17,7 @@ import Account from "./pages/Account";
 import Support from "./pages/Support";
 import OpsDashboard from "./pages/OpsDashboard";
 import OpsKnowledge from "./pages/OpsKnowledge";
+import OpsAdmin from "./pages/OpsAdmin";
 import HealthPage from "./pages/HealthPage";
 import NotFound from "./pages/NotFound";
 import "./index.css";
@@ -46,6 +47,9 @@ createRoot(document.getElementById("root")!).render(
           <Route path="ops" element={<OpsLayout />}>
             <Route index element={<OpsDashboard />} />
             <Route path="knowledge" element={<OpsKnowledge />} />
+            <Route element={<RequireRole role="ADMIN" />}>
+              <Route path="admin" element={<OpsAdmin />} />
+            </Route>
           </Route>
         </Route>
 

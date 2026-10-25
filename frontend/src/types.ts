@@ -1,6 +1,6 @@
 // Shapes of the JSON returned by the backend API (see README "API").
 
-export type Role = "CUSTOMER" | "MANAGER";
+export type Role = "CUSTOMER" | "MANAGER" | "ADMIN";
 export type MembershipTier = "STANDARD" | "SILVER" | "GOLD" | "PLATINUM";
 
 export type Preferences = { brands: string[]; maxBudget: number | null };
@@ -230,6 +230,18 @@ export type KbUploadResult = {
   unchanged: boolean;
   replacedVersion: string | null;
   sections: string[];
+};
+
+// ── Admin ────────────────────────────────────────────────────────────────────
+export type SiteSettings = { demoAccess: boolean; signupEnabled: boolean };
+export type AdminUser = {
+  id: number;
+  email: string;
+  name: string;
+  role: Role;
+  membershipTier: MembershipTier;
+  createdAt: string;
+  _count: { orders: number; tickets: number };
 };
 
 export type Health = { status: string; database: "up" | "down"; timestamp: string };

@@ -15,6 +15,7 @@ datasource db {
 enum Role {
   CUSTOMER
   MANAGER
+  ADMIN // manager access plus site settings and user management
 }
 
 enum MembershipTier {
@@ -108,6 +109,7 @@ model User {
   auditLogs      AuditLog[]
   aiCalls        AiCallLog[]
   tickets        SupportTicket[]
+  settingsEdits  AppSetting[]
 
   @@map("users")
 }
@@ -358,4 +360,16 @@ model SupportTicket {
   @@index([userId, createdAt])
   @@index([status, priority])
   @@map("support_tickets")
+}
+
+// Site settings changed by admins from the website (e.g. demo access, sign-ups), so no redeploy is needed.
+model AppSetting {
+  key         String   @id @db.VarChar(60)
+  value       Json
+  updatedById Int?
+  updatedAt   DateTime @updatedAt
+
+  updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("app_settings")
 }

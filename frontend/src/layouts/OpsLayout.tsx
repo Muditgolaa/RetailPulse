@@ -4,8 +4,9 @@ import StoreSelect from "../components/StoreSelect";
 import { useAuth } from "../store/auth";
 
 const OPS_NAV = [
-  { to: "/ops", text: "Dashboard", end: true },
-  { to: "/ops/knowledge", text: "Knowledge base", end: false },
+  { to: "/ops", text: "Dashboard", end: true, adminOnly: false },
+  { to: "/ops/knowledge", text: "Knowledge base", end: false, adminOnly: false },
+  { to: "/ops/admin", text: "Admin", end: false, adminOnly: true },
 ];
 
 export default function OpsLayout() {
@@ -21,7 +22,7 @@ export default function OpsLayout() {
             RetailPulse<span className="ml-2 rounded bg-ops-emerald/15 px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-ops-emerald">Ops</span>
           </Link>
           <nav className="flex gap-4 text-sm">
-            {OPS_NAV.map(({ to, text, end }) => (
+            {OPS_NAV.filter((n) => !n.adminOnly || user?.role === "ADMIN").map(({ to, text, end }) => (
               <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? "text-ops-text" : "text-ops-muted hover:text-ops-text")}>
                 {text}
               </NavLink>

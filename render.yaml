@@ -17,9 +17,9 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: openai/gpt-oss-120b
-      # Public demo: one-click demo sign-in (server) and demo buttons (frontend build).
-      # Render passes environment variables to the Docker build as build arguments.
+      # Your email: you become ADMIN when you sign up or sign in, then control the site from Admin.
+      - key: ADMIN_EMAILS
+        sync: false
+      # Starting value for demo access, used until an admin changes it on the website.
       - key: DEMO_LOGIN_ENABLED
-        value: "true"
-      - key: VITE_DEMO_ACCESS
         value: "true"

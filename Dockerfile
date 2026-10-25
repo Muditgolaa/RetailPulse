@@ -8,9 +8,6 @@ WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
-# Public demo builds show the one-click demo buttons (the server also needs DEMO_LOGIN_ENABLED=true).
-ARG VITE_DEMO_ACCESS=false
-ENV VITE_DEMO_ACCESS=$VITE_DEMO_ACCESS
 RUN npm run build
 
 # 2. Backend: install, generate the Prisma client, compile TypeScript, cache the embedding model

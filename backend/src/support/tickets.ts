@@ -1,6 +1,7 @@
 // Support tickets: created by customers (or the support agent for them), handled by managers.
 import { z } from "zod";
 import { prisma } from "../db.js";
+import type { Role } from "../generated/prisma/client.js";
 import { HttpError } from "../lib/http.js";
 
 export const CATEGORIES = ["ORDER", "DELIVERY", "RETURN_REFUND", "PRODUCT", "PAYMENT", "OTHER"] as const;
@@ -9,7 +10,7 @@ export const STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED"] as const;
 
 const MAX_TICKETS_PER_HOUR = 3; // stops a customer (or a confused agent) flooding the queue
 
-export type Viewer = { id: number; email: string; role: "CUSTOMER" | "MANAGER" };
+export type Viewer = { id: number; email: string; role: Role };
 
 export const ticketInput = z
   .object({
