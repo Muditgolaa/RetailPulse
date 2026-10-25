@@ -31,4 +31,5 @@ export const useAuth = create<AuthState>()(
   ),
 );
 
-export const homeFor = (user: User | null) => (user?.role === "MANAGER" ? "/ops" : "/");
+// Managers and admins start on the operations dashboard; customers on the storefront.
+export const homeFor = (user: User | null) => (user?.role === "MANAGER" || user?.role === "ADMIN" ? "/ops" : "/");

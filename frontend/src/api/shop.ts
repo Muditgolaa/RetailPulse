@@ -5,12 +5,15 @@ type Session = { token: string; user: User };
 
 export const login = async (email: string, password: string) => (await api.post<Session>("/auth/login", { email, password })).data;
 
+export const register = async (name: string, email: string, password: string) =>
+  (await api.post<Session>("/auth/register", { name, email, password })).data;
+
 export const fetchMe = async () => (await api.get<{ user: User }>("/auth/me")).data.user;
 
 export const savePreferences = async (prefs: Preferences & { preferredStoreId: number | null }) =>
   (await api.put<{ user: User }>("/me/preferences", prefs)).data.user;
 
-// Temporary demo access: a real token for a seeded demo account (the server must enable it).
+// One-click demo access: a real token for a seeded demo account (an admin must switch it on).
 export const demoLogin = async (account: "customer" | "manager") => (await api.post<Session>("/auth/demo", { account })).data;
 
 export const placeOrder = async (order: NewOrder) => (await api.post<Order>("/orders", order)).data;

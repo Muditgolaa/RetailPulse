@@ -32,10 +32,13 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
 };
 
 // Use after requireAuth. The role comes from the database, never from the request.
+// Admins can do everything managers can.
+const allowed = (role: Role, roles: Role[]) => roles.includes(role) || (role === "ADMIN" && roles.includes("MANAGER"));
+
 export const requireRole =
   (...roles: Role[]): RequestHandler =>
   (req, _res, next) => {
     if (!req.user) return next(new HttpError(401, "Sign in required"));
-    if (!roles.includes(req.user.role)) return next(new HttpError(403, "You don't have access to this resource"));
+    if (!allowed(req.user.role, roles)) return next(new HttpError(403, "You don't have access to this resource"));
     next();
   };

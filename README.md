@@ -31,7 +31,8 @@ Then fill in `backend/.env` and create the database:
 
 - `SEED_DEMO_PASSWORD`: any value of 8+ characters. Every demo account gets this password.
 - `JWT_SECRET`: a long random value, for example from `openssl rand -hex 32`.
-- `DEMO_LOGIN_ENABLED=true`: optional, turns on the one-click demo buttons.
+- `DEMO_LOGIN_ENABLED=true`: optional, starts with the one-click demo buttons on.
+- `ADMIN_EMAILS=you@example.com`: optional, your email becomes an admin when it signs up or signs in.
 
 ```bash
 cd backend
@@ -122,23 +123,20 @@ Open http://localhost:5173. The status card shows whether the backend and the da
 | `/support` | customer | Support assistant chat (checks orders and policy, opens tickets) and the customer's tickets |
 | `/account` | customer | Shopping preferences: home store, usual budget and up to 5 favourite brands |
 | `/ops/knowledge` | manager | Upload, list and remove policy documents used by the policy assistant and support agent |
+| `/ops/admin` | admin | Site settings (demo access, sign-ups) and user roles and tiers |
 | `/ops` | manager | Inventory, critical stock, replenishment proposals, audit history |
 | `/status` | public | Backend and database health |
 
-### One-click demo access
+### Accounts, admin and demo access
 
-The login page has **One-click demo access** buttons: "Customer" signs you in as Priya, a Gold member, and "Store manager" as Rahul at DEL01. Neither needs a password. The backend issues a real token through `POST /api/auth/demo`, which only works when `DEMO_LOGIN_ENABLED=true`.
-
-- **Development:** the buttons show in `npm run dev` unless `VITE_DEMO_ACCESS=false`.
-- **Production:** the buttons show only in a build made with `VITE_DEMO_ACCESS=true`, and the server needs `DEMO_LOGIN_ENABLED=true`.
-- **Use with care:** turn it on only for a public demo with fictional data, because every visitor shares the demo accounts.
-
-To remove the demo access completely, delete:
-
-- `frontend/src/components/DemoAccess.tsx`, with its import and usage in `pages/Login.tsx`
-- the `/demo` route in `backend/src/routes/auth.ts`
-
-To turn it off without deleting anything, set `DEMO_LOGIN_ENABLED=false`.
+- **Sign up:** anyone can create a customer account on the sign-in page (`POST /api/auth/register`). New accounts are Standard members at DEL01. The role and tier can't be chosen at sign-up.
+- **Admins:** list your email in `ADMIN_EMAILS` (backend `.env` locally, Render dashboard in production). That email becomes **ADMIN** when it signs up or next signs in. Admins can use every manager page, plus **Admin** (`/ops/admin`).
+- **Admin page:**
+  - Switch **one-click demo access** and **new sign-ups** on or off. This is instant, with no code change or redeploy.
+  - Search users and change their role (customer, manager or admin) and membership tier.
+  - Every change is audited. The site always keeps at least one admin, and admins can't remove their own access.
+- **Demo access:** "Try the demo" signs in as Priya (Gold customer) or Rahul (DEL01 manager) without a password. `DEMO_LOGIN_ENABLED` only sets the starting value until an admin changes it. Turn it on only while the data is fictional, because every visitor shares the demo accounts.
+- **Brute-force protection:** sign-in and sign-up allow 20 attempts per IP address every 15 minutes.
 
 ### Mock data
 
@@ -152,7 +150,12 @@ The frontend has no mock data left: every screen uses the real API.
 | GET | `/api/health/ai` | public | Groq connectivity via the model list (no tokens spent, cached 60 s): `{provider, configured, reachable, model, modelAvailable, latencyMs, error?}`. `503` if not usable. Never includes the key |
 | POST | `/api/auth/login` | public | `{email, password}` → `{token, user}`. `400` invalid body, `401` wrong email or password |
 | GET | `/api/auth/me` | signed in | `{user}` from the token. `401` if missing, invalid or expired |
-| POST | `/api/auth/demo` | public, opt-in | `{account: "customer"\|"manager"}` → `{token, user}`. `404` unless `DEMO_LOGIN_ENABLED=true` |
+| POST | `/api/auth/register` | public | `{name, email, password (8+)}` → `201 {token, user}` (signed in). `409` if the email exists, `403` if sign-ups are closed, `429` after 20 attempts per IP in 15 minutes |
+| POST | `/api/auth/demo` | public, admin-controlled | `{account: "customer"\|"manager"}` → `{token, user}`. `403` while demo access is off |
+| GET | `/api/settings` | public | `{demoAccess, signupEnabled}` |
+| GET / PUT | `/api/admin/settings` | ADMIN | Read or change the site settings above. Audited |
+| GET | `/api/admin/users?q=` | ADMIN | Users with role, tier, order and ticket counts |
+| PATCH | `/api/admin/users/:id` | ADMIN | `{role?, membershipTier?}`. Audited. `409` when it would remove the last admin or your own admin access |
 | GET | `/api/stores` | public | `[{id, code, name, city}]` |
 | GET | `/api/products` | public | Query `q, category, brand, minPrice, maxPrice, storeId, inStock, sort, page, size`. Returns `{content, totalElements, totalPages, number, size}`. `availability` is included when `storeId` is given |
 | GET | `/api/products/facets` | public | `{categories, brands, priceRange}` |

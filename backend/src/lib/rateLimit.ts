@@ -16,3 +16,19 @@ export const aiRateLimit: RequestHandler = (req, _res, next) => {
 };
 
 export const resetAiRateLimit = () => calls.clear();
+
+// Per-IP limit for sign-in and sign-up, to slow down password guessing and account spam.
+const authAttempts = new Map<string, number[]>();
+const AUTH_WINDOW_MS = 15 * 60_000;
+const AUTH_MAX_ATTEMPTS = 20;
+
+export const authRateLimit: RequestHandler = (req, _res, next) => {
+  const key = req.ip ?? "unknown";
+  const now = Date.now();
+  const recent = (authAttempts.get(key) ?? []).filter((t) => now - t < AUTH_WINDOW_MS);
+  if (recent.length >= AUTH_MAX_ATTEMPTS) return next(new HttpError(429, "Too many attempts. Please wait 15 minutes and try again."));
+  authAttempts.set(key, [...recent, now]);
+  next();
+};
+
+export const resetAuthRateLimit = () => authAttempts.clear();
