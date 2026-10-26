@@ -5,14 +5,14 @@ import QtyStepper from "../components/storefront/QtyStepper";
 import Button from "../components/ui/Button";
 import { EmptyState } from "../components/ui/States";
 import { useStoreName } from "../components/StoreSelect";
-import { errorMessage } from "../api/client";
+import { errorMessage, isNoReply } from "../api/client";
 import { placeOrder } from "../api/shop";
-import { formatPrice } from "../lib/format";
+import { capitalize, formatPrice } from "../lib/format";
 import { useAuth } from "../store/auth";
 import { cartSubtotal, useCart } from "../store/cart";
 import { useShop } from "../store/shop";
 import { toast } from "../store/toast";
-import type { Fulfilment, MembershipTier, Order } from "../types";
+import type { Fulfilment, MembershipTier, PlacedOrder } from "../types";
 
 // Preview of the server's rule (backend/src/orders/service.ts). The server's figure is the one charged.
 function estimateDeliveryFee(subtotal: number, fulfilment: Fulfilment, tier?: MembershipTier) {
@@ -28,7 +28,7 @@ export default function Cart() {
   const [fulfilment, setFulfilment] = useState<Fulfilment>("DELIVERY");
   const [placing, setPlacing] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
+  const [placedOrder, setPlacedOrder] = useState<PlacedOrder | null>(null);
 
   const subtotal = cartSubtotal(items);
   const fee = estimateDeliveryFee(subtotal, fulfilment, tier);
@@ -42,9 +42,19 @@ export default function Cart() {
       setPlacedOrder(order);
       clear();
       toast.success("Order placed", `${order.code} · ${formatPrice(order.total)}`);
+      const user = useAuth.getState().user;
+      if (order.membershipUpgrade && user) {
+        useAuth.getState().setUser({ ...user, membershipTier: order.membershipUpgrade.to });
+        toast.success(`You're now a ${capitalize(order.membershipUpgrade.to)} member`, "Your new benefits apply from your next order.");
+      }
     } catch (err) {
-      setCheckoutError(errorMessage(err));
-      toast.error("Order not placed", errorMessage(err));
+      // Without a reply we can't know whether the order went through, so don't invite a second one blindly.
+      const noReply = isNoReply(err);
+      const message = noReply
+        ? "We didn't get a reply from the server, so the order may or may not have been placed. Check Orders before trying again."
+        : `Order not placed. ${errorMessage(err)}`;
+      setCheckoutError(message);
+      toast.error(noReply ? "Order not confirmed" : "Order not placed", noReply ? "Check Orders before trying again." : errorMessage(err));
     } finally {
       setPlacing(false);
     }
@@ -115,7 +125,7 @@ export default function Cart() {
             <div className="flex justify-between border-t border-line pt-2 font-semibold"><dt>Total</dt><dd className="tabular">{formatPrice(subtotal + fee)}</dd></div>
           </dl>
 
-          {checkoutError && <p role="alert" className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">Order not placed. {checkoutError}</p>}
+          {checkoutError && <p role="alert" className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{checkoutError}</p>}
 
           <Button size="lg" className="mt-6 w-full" onClick={checkout} loading={placing}>
             Place order
@@ -127,7 +137,7 @@ export default function Cart() {
   );
 }
 
-function OrderConfirmation({ order }: { order: Order }) {
+function OrderConfirmation({ order }: { order: PlacedOrder }) {
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center gap-3 text-center">
       <p className="text-xs uppercase tracking-[0.18em] text-forest">Order confirmed</p>
@@ -136,6 +146,12 @@ function OrderConfirmation({ order }: { order: Order }) {
         {order.code} · {formatPrice(order.total)} · {order.fulfilment === "PICKUP" ? `pick up at ${order.store.name}` : "home delivery"}
       </p>
       {order.statusNote && <p className="text-sm text-ink-soft">{order.statusNote}</p>}
+      {order.membershipUpgrade && (
+        <p className="mt-4 rounded-md bg-forest/10 px-4 py-3 text-sm text-forest">
+          This order moved you up to <b>{capitalize(order.membershipUpgrade.to)}</b> membership.{" "}
+          <Link to="/account" className="underline">See your new benefits</Link>
+        </p>
+      )}
       <div className="mt-6 flex gap-6">
         <Link to="/orders" className="text-forest hover:underline">View my orders</Link>
         <Link to="/" className="text-forest hover:underline">Continue shopping</Link>
