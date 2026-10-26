@@ -14,6 +14,7 @@ const startedAt = new Date();
 const tokens: Record<"gold" | "standard" | "manager", string> = { gold: "", standard: "", manager: "" };
 let productId = 0;
 let original: { onHand: number; reserved: number; version: number } = { onHand: 0, reserved: 0, version: 0 };
+let arjunBefore = { id: 0, membershipTier: "STANDARD" as "STANDARD" | "SILVER" | "GOLD" | "PLATINUM" }; // orders here can earn Arjun a tier
 
 const post = (who: keyof typeof tokens | null, url: string, body?: object) => {
   const req = request(app).post(url).send(body ?? {});
@@ -36,6 +37,7 @@ beforeAll(async () => {
   ]);
   tokens.gold = signToken(priya.id);
   tokens.standard = signToken(arjun.id);
+  arjunBefore = { id: arjun.id, membershipTier: arjun.membershipTier };
   tokens.manager = signToken(rahul.id);
   productId = product.id;
   original = await stock();
@@ -45,7 +47,8 @@ beforeEach(() => setStock(5));
 
 afterAll(async () => {
   await prisma.order.deleteMany({ where: { createdAt: { gte: startedAt } } });
-  await prisma.auditLog.deleteMany({ where: { createdAt: { gte: startedAt }, entity: "order" } });
+  await prisma.auditLog.deleteMany({ where: { createdAt: { gte: startedAt }, action: { in: ["ORDER_PLACED", "ORDER_CANCELLED", "MEMBERSHIP_UPGRADED"] } } });
+  await prisma.user.update({ where: { id: arjunBefore.id }, data: { membershipTier: arjunBefore.membershipTier } });
   await prisma.inventory.update({ where: { storeId_productId: { storeId: FAR01, productId } }, data: original });
   await prisma.$disconnect();
 });

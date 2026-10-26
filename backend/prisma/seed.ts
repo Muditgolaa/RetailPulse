@@ -118,8 +118,9 @@ const orders: OrderSeed[] = [
   { code: "ORD-1023", email: "priya@novamart.test", store: "DEL01", fulfilment: "DELIVERY", status: "DELAYED",
     createdDaysAgo: 6, expectedInDays: -3, statusNote: "Courier delay at the Delhi sorting hub; new date not confirmed",
     items: [["P302", 1]] },
+  // Arjun has spent ₹23,999, ₹1,001 short of Silver, so his next order shows a membership upgrade.
   { code: "ORD-1024", email: "arjun@novamart.test", store: "NOIDA01", fulfilment: "DELIVERY", status: "PLACED",
-    createdDaysAgo: 0, expectedInDays: 4, items: [["P205", 1], ["P507", 1]] },
+    createdDaysAgo: 0, expectedInDays: 4, items: [["P205", 1]] },
 ];
 
 async function seedOrders(userIds: Record<string, number>, storeIds: Record<StoreCode, number>, productIds: Record<string, number>) {

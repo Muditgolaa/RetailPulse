@@ -4,13 +4,13 @@ import Skeleton from "../components/ui/Skeleton";
 import { ErrorState } from "../components/ui/States";
 import { errorMessage } from "../api/client";
 import { getFacets, listStores } from "../api/catalog";
-import { savePreferences } from "../api/shop";
-import { capitalize } from "../lib/format";
+import { getMembership, savePreferences } from "../api/shop";
+import { capitalize, formatPrice } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
 import { useAuth } from "../store/auth";
 import { useShop } from "../store/shop";
 import { toast } from "../store/toast";
-import type { Store, User } from "../types";
+import type { Membership, Store, User } from "../types";
 
 const MAX_BRANDS = 5;
 
@@ -31,6 +31,8 @@ export default function Account() {
         </p>
       </header>
 
+      <MembershipCard />
+
       {options.error ? (
         <ErrorState title="Couldn't load your settings" error={options.error} onRetry={options.reload} />
       ) : options.loading ? (
@@ -39,6 +41,69 @@ export default function Account() {
         <PreferencesForm user={user} stores={options.data.stores} brands={options.data.brands} />
       )}
     </div>
+  );
+}
+
+// Current tier, progress towards the next one, and what every tier includes.
+function MembershipCard() {
+  const membership = useAsync(async () => {
+    const data = await getMembership();
+    // Opening the summary can apply a tier earned earlier, so keep the signed-in user in step.
+    const user = useAuth.getState().user;
+    if (user && user.membershipTier !== data.tier) useAuth.getState().setUser({ ...user, membershipTier: data.tier });
+    return data;
+  }, []);
+
+  if (membership.error) return <ErrorState title="Couldn't load your membership" error={membership.error} onRetry={membership.reload} />;
+  if (membership.loading) return <Skeleton className="h-72 w-full" />;
+  return <MembershipDetails membership={membership.data} />;
+}
+
+function MembershipDetails({ membership }: { membership: Membership }) {
+  const { tier, spentLast12Months, next, tiers } = membership;
+  const progress = next ? Math.min(100, Math.round((spentLast12Months / next.minSpend) * 100)) : 100;
+
+  return (
+    <section className="flex flex-col gap-6 rounded-lg border border-line bg-white/60 p-6">
+      <div>
+        <h2 className="font-display text-2xl">{capitalize(tier)} membership</h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          Your tier depends on what you spend in 12 months. It goes up as soon as an order takes you past the next level, and it's only reviewed downwards once a year.
+        </p>
+      </div>
+
+      <div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+          <span>
+            Spent in the last 12 months: <b className="tabular">{formatPrice(spentLast12Months)}</b>
+          </span>
+          <span className="text-ink-soft">
+            {next ? `${formatPrice(next.remaining)} more to reach ${capitalize(next.tier)}` : "You're at the top tier"}
+          </span>
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to the next tier">
+          <div className="h-full rounded-full bg-forest" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {tiers.map((t) => {
+          const current = t.tier === tier;
+          return (
+            <li key={t.tier} className={`rounded-md border p-4 ${current ? "border-forest bg-forest/5" : "border-line"}`}>
+              <div className="flex items-baseline justify-between gap-2">
+                <h3 className="font-medium">{capitalize(t.tier)}</h3>
+                <span className="text-xs text-ink-soft">{current ? "Your tier" : t.minSpend === 0 ? "Free to join" : `${formatPrice(t.minSpend)}+ a year`}</span>
+              </div>
+              <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-sm text-ink-soft">
+                {t.benefits.map((b) => <li key={b}>{b}</li>)}
+              </ul>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-xs text-ink-soft">Cancelled orders don't count. Full details are in the Membership Benefits policy; ask the policy assistant anything about it.</p>
+    </section>
   );
 }
 

@@ -5,6 +5,14 @@ export type MembershipTier = "STANDARD" | "SILVER" | "GOLD" | "PLATINUM";
 
 export type Preferences = { brands: string[]; maxBudget: number | null };
 
+// Tiers are earned by spend in the last 12 months; the server never lowers one between yearly reviews.
+export type Membership = {
+  tier: MembershipTier;
+  spentLast12Months: number;
+  next: { tier: MembershipTier; minSpend: number; remaining: number } | null;
+  tiers: { tier: MembershipTier; minSpend: number; benefits: string[] }[];
+};
+
 export type User = {
   id: number;
   email: string;
@@ -64,6 +72,8 @@ export type Order = {
   createdAt: string;
   items: { sku: string; name: string; brand: string; category: string; qty: number; unitPrice: number }[];
 };
+export type MembershipUpgrade = { from: MembershipTier; to: MembershipTier };
+export type PlacedOrder = Order & { membershipUpgrade: MembershipUpgrade | null };
 export type NewOrder = { storeId: number; fulfilment: Fulfilment; items: { sku: string; qty: number }[] };
 
 // ── AI ───────────────────────────────────────────────────────────────────────

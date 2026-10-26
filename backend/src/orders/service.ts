@@ -2,6 +2,7 @@
 import { Prisma } from "../generated/prisma/client.js";
 import { prisma } from "../db.js";
 import { HttpError } from "../lib/http.js";
+import { applyEarnedTier } from "../users/membership.js";
 
 export type Customer = { id: number; email: string; membershipTier: string };
 export type OrderInput = { storeId: number; fulfilment: "PICKUP" | "DELIVERY"; items: { sku: string; qty: number }[] };
@@ -52,7 +53,7 @@ export async function placeOrder(input: OrderInput, customer: Customer) {
   const subtotal = lines.reduce((sum, l) => sum + Number(l.product.price) * l.qty, 0);
   const fee = deliveryFee(subtotal, input.fulfilment, customer.membershipTier);
 
-  const order = await prisma.$transaction(async (tx) => {
+  const { order, membershipUpgrade } = await prisma.$transaction(async (tx) => {
     // Reserve each line only if enough is available right now. The conditional UPDATE locks the row, so two
     // customers can't both take the last unit; any shortfall rolls back the whole order.
     for (const l of lines) {
@@ -84,9 +85,10 @@ export async function placeOrder(input: OrderInput, customer: Customer) {
         details: { storeCode: store.code, total: subtotal + fee, items: input.items },
       },
     });
-    return created;
+    // The new tier applies from the next order; this one was priced with the tier the customer had.
+    return { order: created, membershipUpgrade: await applyEarnedTier(customer, tx) };
   });
-  return toOrderDto(order);
+  return { ...toOrderDto(order), membershipUpgrade };
 }
 
 export async function listOrders(userId: number) {

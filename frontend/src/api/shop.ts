@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { AskResponse, NewOrder, Order, Preferences, RecommendResponse, User } from "../types";
+import type { AskResponse, Membership, NewOrder, Order, PlacedOrder, Preferences, RecommendResponse, User } from "../types";
 
 type Session = { token: string; user: User };
 
@@ -13,10 +13,12 @@ export const fetchMe = async () => (await api.get<{ user: User }>("/auth/me")).d
 export const savePreferences = async (prefs: Preferences & { preferredStoreId: number | null }) =>
   (await api.put<{ user: User }>("/me/preferences", prefs)).data.user;
 
+export const getMembership = async () => (await api.get<Membership>("/me/membership")).data;
+
 // One-click demo access: a real token for a seeded demo account (an admin must switch it on).
 export const demoLogin = async (account: "customer" | "manager") => (await api.post<Session>("/auth/demo", { account })).data;
 
-export const placeOrder = async (order: NewOrder) => (await api.post<Order>("/orders", order)).data;
+export const placeOrder = async (order: NewOrder) => (await api.post<PlacedOrder>("/orders", order)).data;
 
 export const listOrders = async () => (await api.get<Order[]>("/orders")).data;
 
