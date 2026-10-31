@@ -1,7 +1,8 @@
 # Dependencies
 node_modules/
 
-docs
+docs/*
+!docs/screenshots/
 
 # Build output
 dist/

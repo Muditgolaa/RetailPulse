@@ -19,7 +19,7 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-189_passing-2ea44f?style=flat-square)
 
-[Features](#features) · [Architecture](#architecture) · [Workflows](#workflows) · [Getting Started](#getting-started) · [API](#api) · [Testing](#testing)
+[Features](#features) · [Screenshots](#screenshots) · [Architecture](#architecture) · [Workflows](#workflows) · [Getting Started](#getting-started) · [API](#api) · [Testing](#testing)
 
 </div>
 
@@ -88,17 +88,43 @@ The platform integrates LLMs with real database operations, deterministic busine
 </tr>
 </table>
 
-<!--
+<a id="screenshots"></a>
+
 ## 🖥️ Screenshots
 
-Save genuine screenshots from the running app in docs/screenshots/ with these names, then remove this comment's markers.
+### Customer Experience
 
-| Customer Storefront | AI Shopping Assistant |
-| :---: | :---: |
-| ![Customer storefront](docs/screenshots/storefront.png) | ![AI shopping assistant](docs/screenshots/assistant.png) |
-| **Policy Assistant** | **Inventory Dashboard** |
-| ![Policy assistant](docs/screenshots/policy.png) | ![Inventory dashboard](docs/screenshots/inventory.png) |
--->
+<table>
+<tr>
+<td width="50%" align="center"><b>Storefront</b></td>
+<td width="50%" align="center"><b>AI Shopping Assistant</b></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/storefront.png" alt="Storefront with search, category filters and products in stock at the selected store"></td>
+<td><img src="docs/screenshots/shoppingAssistant.png" alt="Shopping assistant ranking real catalogue phones for a natural-language request"></td>
+</tr>
+<tr>
+<td width="50%" align="center"><b>RAG Policy Assistant</b></td>
+<td width="50%" align="center"><b>Cart and Checkout</b></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/policies.png" alt="Policy assistant answering a question with a cited policy section"></td>
+<td><img src="docs/screenshots/inventory.png" alt="Cart with delivery options and an order summary"></td>
+</tr>
+</table>
+
+### Manager Operations
+
+<table>
+<tr>
+<td width="50%" align="center"><b>Inventory Dashboard</b></td>
+<td width="50%" align="center"><b>Knowledge Base</b></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/managerDashboard.png" alt="Operations dashboard with stock KPIs, items needing attention and support tickets"></td>
+<td><img src="docs/screenshots/knowledgeBase.png" alt="Knowledge base page for uploading and managing policy documents"></td>
+</tr>
+</table>
 
 <a id="architecture"></a>
 
